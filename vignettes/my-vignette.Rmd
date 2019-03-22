@@ -1,5 +1,5 @@
 ---
-title: "DevTreatRules - Developing and Evaluating a Treatment Rule"
+title: "Using DevTreatRules"
 #author: "Jeremy Roth"
 #date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -8,58 +8,73 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-
-```{r setup, include = FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "##"
 )
 ```
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+Here, we show how to use the DevTreatRules package by analyzing the example dataset included with the DevTreatRules package.
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
-
-## Vignette Info
-
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+## Load the package 
+```{r set_up, include=FALSE}
+library(DevTreatRules)
+library(dplyr)
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
-
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+## Split the dataset
+```{r split_data}
+example.split <- SplitData(data=example, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+table(example.split$partition)
+development.data <- example.split %>% filter(partition == "development")
+validation.data <-  example.split %>% filter(partition == "validation")
+evaluation.data <-  example.split %>% filter(partition == "evaluation")
+```
+## Decide on variable roles
+Suppose we believe the variables `prognosis`, `clinic`, and `age` may have influenced treatment assignment. We would codify this belief into DevTreatRules by specifying the argument
+```{r}
+names.influencing.treatment=c("prognosis", "clinic", "age")
+```
+in functions we will call later in this vignette. Further suppose that we don't expect `prognosis` and `clinic` to be measured on the same scale in independent clinical settings where we would like to apply our estimated rule. However, we do expect the gene expression measurements in `gene_1`, ..., `gene_10` to potentially influence treatment response and also to be reliably measured in future settings. We codify this in DevTreatRules with the argument
+```{r}
+names.influencing.rule=c("age", paste0("gene_", 1:10))
 ```
 
-Also a quote using `>`:
+## On the development dataset, build the treatment rule
+Although we could directly estimate a single treatment rule on the development dataset with the BuildRule function
+```{r build_one_rule}
+one.rule <- BuildRule(data=development.data,
+                      study.design="observational",
+                      prediction.approach="split.regression",
+                      name.outcome="no_relapse",
+                      type.outcome="binary",
+                      desirable.outcome=TRUE,
+                      name.treatment="intervention",
+                      names.influencing.treatment=c("prognosis", "clinic", "age"),
+                      names.influencing.rule=c("age", paste0("gene_", 1:10)),
+                      propensity.method="logistic.regression",
+                      rule.method="glm.regression")
+```
+but this has limited utility because it required us to specify only the split-regression approach (even if we don't have a priori knowledge about which of split-regression, OWL framework, and direct-interactions approaches will perform best) and to specify standard GLM regression as the underlying regression method (even when performing variable shrinkage or seletion will yield better performance). 
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+In view of this, it would be more useful to perform model selection to estimate rules for all combinations of split-regression/OWL framework/direct-interactions and standard/lasso/ridge logistic regression. The model-selection process is automated with the function BuildRulesOnValidation.
+
+## On the validation dataset, perform model selection
+Here we will perform variable selection by calling `BuildRulesOnValidation()` with the arguments
+```{r}
+vec.approaches=c("split-regression", "OWL.framework", "direct.interactions")
+vec.rule.methods=c("glm.regression", "lasso", "ridge")
+vec.propensity.methods=c("logistic.regression", "lasso", "ridge")
+```
+that reflect the modeling choices currently supported by DevTreatRules, and are actually the default values of the arguments in `BuildRulesOnValidation()`.
+```{r model_selection_on_validation}
+print("BuildRulesOnValidation")
+```
+So it looks like NEED TO ADD and NEED TO ADD might perform the best. We will lock these in and apply them to the evaluation set
+
+## On the evaluation dataset, evaluate the selected treatment rules
+```{r evaluate_selected_treatment_rules_on_test_set}
+
+```
+The above estimates, for the locked-in treatment rules on the evaluation set, are what we'd expect to observe in an independent clinical setting where individuals are drawn from the same population.

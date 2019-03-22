@@ -14,29 +14,29 @@ SplitData <- function(data,
         if (is.null(split.proportions)) {
             split.proportions <- c(0.7, 0.3)
         }
-        n.training <- ceiling(split.proportions[1] * n)
-        idx.training <- sort(sample(x=1:n, size=n.training, replace=FALSE))
-        idx.test <- (1:n)[-idx.training]
+        n.development <- ceiling(split.proportions[1] * n)
+        idx.development <- sort(sample(x=1:n, size=n.development, replace=FALSE))
+        idx.evaluation <- (1:n)[-idx.development]
         partition <- rep(NA, n)
-        partition[idx.training] <- "training"
-        partition[idx.test] <- "test"
-        partition <- factor(partition, levels=c("training", "test"))
+        partition[idx.development] <- "development"
+        partition[idx.evaluation] <- "evaluation"
+        partition <- factor(partition, levels=c("development", "evaluation"))
     }
     if (n.sets == 3) {
         if (is.null(split.proportions)) {
             split.proportions <- c(0.5, 0.25, 0.25)
         }
-        n.training <- ceiling(split.proportions[1] * n)
+        n.development <- ceiling(split.proportions[1] * n)
         n.validation <- floor(split.proportions[2] * n)
-        n.test <- n - (n.training + n.validation)
-        idx.training <- sort(sample(x=1:n, size=n.training, replace=FALSE))
-        idx.validation <- sort(sample((1:n)[-idx.training], size=n.validation, replace=FALSE))
-        idx.test <- (1:n)[-sort(c(idx.training, idx.validation))]
+        n.evaluation <- n - (n.development + n.validation)
+        idx.development <- sort(sample(x=1:n, size=n.development, replace=FALSE))
+        idx.validation <- sort(sample((1:n)[-idx.development], size=n.validation, replace=FALSE))
+        idx.evaluation <- (1:n)[-sort(c(idx.development, idx.validation))]
         partition <- rep(NA, n)
-        partition[idx.training] <- "training"
+        partition[idx.development] <- "development"
         partition[idx.validation] <- "validation"
-        partition[idx.test] <- "test"
-        partition <- factor(partition, levels=c("training", "validation", "test"))
+        partition[idx.evaluation] <- "evaluation"
+        partition <- factor(partition, levels=c("development", "validation", "evaluation"))
     }
     modified.data <- data.frame(data, partition)
     return(modified.data)
