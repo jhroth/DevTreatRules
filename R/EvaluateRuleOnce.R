@@ -9,7 +9,7 @@ EvaluateRuleOnce <- function(data,
                                   clinical.threshold=0,
                                   names.influencing.treatment,
                                   names.influencing.rule,
-                                  propensity.method,
+                                  propensity.method="logistic.regression",
                                   observation.weights,
                                   additional.weights=rep(1, nrow(data)),
                                   lambda.choice=c("min", "1se"),
@@ -26,6 +26,7 @@ EvaluateRuleOnce <- function(data,
     if (is.null(BuildRule.object) & is.null(B)) {
         stop("either BuildRule.object or B has to be specified")
     }
+    stopifnot(propensity.method %in% c("logistic.regression"))
     if (is.null(BuildRule.object) == FALSE) {
         B <- PredictRule(BuildRule.object=BuildRule.object,
                           new.X=data[, names.influencing.rule, drop=FALSE],

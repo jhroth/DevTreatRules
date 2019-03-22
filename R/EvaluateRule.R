@@ -10,7 +10,7 @@ EvaluateRule <- function(data,
                                   name.treatment,
                                   names.influencing.treatment,
                                   names.influencing.rule,
-                                  propensity.method=NULL, # c("logistic.regression", "linear.regression")
+                                  propensity.method="logistic.regression",
                                   truncate.propensity.score=TRUE,
                                   truncate.propensity.score.threshold=0.05, 
                                   observation.weights=NULL,
@@ -23,10 +23,13 @@ EvaluateRule <- function(data,
                                   bootstrap.type="basic") {
     lambda.choice <- match.arg(lambda.choice)
     if (is.null(propensity.method) & is.null(observation.weights)) {
-        stop("need to specify either a method for estimating the propensity score, or a vector of observation weights to use instead")
+        stop("need to specify either logistic regression for estimating the propensity score, or a vector of observation weights to use instead")
     }
     if (!is.null(propensity.method) & !is.null(observation.weights)) {
         stop("cannot specify both a method for estimating the propenstiy score (implying it needs to be computed) and a vector of observation weights to use instead")
+    }
+    if (!is.null(propensity.method)) {
+        stopifnot(propensity.method %in% c("logistic.regression"))
     }
     if (!is.null(observation.weights) & !is.numeric(observation.weights))
         stop("if observation weights are provided, they need to be numeric")

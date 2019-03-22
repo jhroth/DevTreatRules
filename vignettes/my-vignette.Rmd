@@ -13,30 +13,33 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "##"
 )
-```
-
-Here, we show how to use the DevTreatRules package by analyzing the example dataset included with the DevTreatRules package.
-
-## Load the package 
-```{r set_up, include=FALSE}
 library(DevTreatRules)
-library(dplyr)
+```
+Here, we illustrate the `DevTreatRules` package by building and evaluating treatment rules based on the the example dataset included with the package.
+```{r}
+head(example_df)
 ```
 
 ## Split the dataset
+We can split the `example` dataset included in `DevTreatRules` by calling the `SplitData()` function
 ```{r split_data}
-example.split <- SplitData(data=example, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+set.seed(123)
+example.split <- SplitData(data=example_df, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 table(example.split$partition)
+```
+and forming independent development/validation/evaluation subsets based on the `partition` variable created above.
+```{r make_subsets, message=FALSE}
+library(dplyr)
 development.data <- example.split %>% filter(partition == "development")
 validation.data <-  example.split %>% filter(partition == "validation")
 evaluation.data <-  example.split %>% filter(partition == "evaluation")
 ```
 ## Decide on variable roles
-Suppose we believe the variables `prognosis`, `clinic`, and `age` may have influenced treatment assignment. We would codify this belief into DevTreatRules by specifying the argument
+Suppose we believe the variables `prognosis`, `clinic`, and `age` may have influenced treatment assignment. We would codify this knowledge into `DevTreatRules` by specifying the argument
 ```{r}
 names.influencing.treatment=c("prognosis", "clinic", "age")
 ```
-in functions we will call later in this vignette. Further suppose that we don't expect `prognosis` and `clinic` to be measured on the same scale in independent clinical settings where we would like to apply our estimated rule. However, we do expect the gene expression measurements in `gene_1`, ..., `gene_10` to potentially influence treatment response and also to be reliably measured in future settings. We codify this in DevTreatRules with the argument
+in functions we will call later in this vignette. Further suppose that we don't expect `prognosis` and `clinic` to be measured on the same scale in independent clinical settings where we would like to apply our estimated rule (so they are not sensible rule inputs). However, we do expect the gene expression measurements in `gene_1`, ..., `gene_10` to potentially influence treatment response and also to be reliably measured in future settings (so they are sensible rule inputs). We will codify this in `DevTreatRules` with the argument
 ```{r}
 names.influencing.rule=c("age", paste0("gene_", 1:10))
 ```
@@ -56,9 +59,9 @@ one.rule <- BuildRule(data=development.data,
                       propensity.method="logistic.regression",
                       rule.method="glm.regression")
 ```
-but this has limited utility because it required us to specify only the split-regression approach (even if we don't have a priori knowledge about which of split-regression, OWL framework, and direct-interactions approaches will perform best) and to specify standard GLM regression as the underlying regression method (even when performing variable shrinkage or seletion will yield better performance). 
+this has limited utility because it required us to specify just one approach (even if we don't have a priori knowledge about which of split-regression, OWL framework, and direct-interactions approaches will perform best) and to specify just one regresion method for the `propensity.score` and `rule.method` arguments (even if we are not sure whether standard GLM or penalized GLM that performs variable shrinkage/seletion will yield a better rule).
 
-In view of this, it would be more useful to perform model selection to estimate rules for all combinations of split-regression/OWL framework/direct-interactions and standard/lasso/ridge logistic regression. The model-selection process is automated with the function BuildRulesOnValidation.
+In view of this, it would be more useful to perform model selection to estimate rules for all combinations of split-regression/OWL framework/direct-interactions and standard/lasso/ridge logistic regression (e.g. by looping over calls to `BuildRule()`). The model-selection process is automated with the function BuildRulesOnValidation.
 
 ## On the validation dataset, perform model selection
 Here we will perform variable selection by calling `BuildRulesOnValidation()` with the arguments
@@ -67,7 +70,7 @@ vec.approaches=c("split-regression", "OWL.framework", "direct.interactions")
 vec.rule.methods=c("glm.regression", "lasso", "ridge")
 vec.propensity.methods=c("logistic.regression", "lasso", "ridge")
 ```
-that reflect the modeling choices currently supported by DevTreatRules, and are actually the default values of the arguments in `BuildRulesOnValidation()`.
+that reflect the modeling choices currently supported by `DevTreatRules`, and are actually the default values of the arguments in `BuildRulesOnValidation()`.
 ```{r model_selection_on_validation}
 print("BuildRulesOnValidation")
 ```
@@ -78,3 +81,10 @@ So it looks like NEED TO ADD and NEED TO ADD might perform the best. We will loc
 
 ```
 The above estimates, for the locked-in treatment rules on the evaluation set, are what we'd expect to observe in an independent clinical setting where individuals are drawn from the same population.
+
+We could have also obtain bootstrap-based CIs for the ATE/ABR estimates (in both the validation and evaluation datasets) by specifying the arguments to `BuildRulesOnValidation` and `EvaluatRule()`
+```{r}
+bootstrap.CI=TRUE
+booststrap.CI.replications=1000
+```
+(or for any desired number of replications) but we chose not to compute the CIs in this example to minimize run-time.
