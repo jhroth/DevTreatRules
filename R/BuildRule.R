@@ -1,32 +1,92 @@
+#' Build a Treatment Rule
+#'
+#' @param data A data frame representing the **development** (i.e. training) dataset used for building a treatment rule
+#' @param study.design Either `observational', `RCT', or `naive'. For the \code{observational} design, the function will use inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function will use IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.
+#' @param prediction.approach One of `split-regression', `direct-interactions', `OWL', or `OWL framework'
+#' @param name.outcome A character indicating the name of the outcome variable in \code{data}
+#' @param type.outcome Either `binary' or `continuous', the form of \code{name.outcome}
+#' @param name.treatment A character indicating the name of the treatment variable in \code{data}
+#' @param names.influencing.treatment A character vector (or element) indicating the names of the variables in \code{data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.
+#' @param names.influencing.rule A character vector (or element) indicating the names of the variables in \code{data} that may influence response to treatment and are expected to be observed in future clinical settings
+#' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage. This can be used, for example, to account for a non-representative sampling design or an IPW adjustment for missingness. The default is a vector of 1s.
+#' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. a 1 for a binary outcome suggests a better outcome clinically than a 0). The \code{OWL.framework} and \code{OWL} prediction approach require a desirable outcome.
+#' @param rule.method One of `glm.regression', `lasso', or `ridge'. For \code{type.outcome=}`binary', `glm.regression' leads to logistic regression; for a \code{type.outcome=}`continuous', `glm.regression' specifies linear regression. This is the underlying regression model used to develop the treatment rule.
+#' @param propensity.method One of`logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational'.
+#' @param truncate.propensity.score A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be \code{truncate.propensity.score.threshold} away from 0 or 1.
+#' @param truncate.propensity.score.threshold A numeric value between 0 and 0.25.
+#' @param type.observation.weights Default is NULL, but other choices are `IPW.L', `IPW.L.and.X', and `IPW.ratio', where L indicates the \code{names.influencing.treatment} variables, X indicates the \code{names.influencing.rule} variables. The default behavior is to use the `IPW.ratio' observation weights (propensity score based on X divided by propensity score based on L and X) for \code{prediction.approach=}`split.regression' and to use `IPW.L' observation weights (inverse of propensity score based on L) for the `direct.interactions', `OWL', and `OWL.framework' prediction approaches.
+#' @param propensity.k.cv.folds An integer dictating how many folds to use for K-fold cross-validation that chooses the tuning parameters when \code{propensity.method} is `lasso' or \`ridge'. Default is 10.
+#' @param rule.k.cv.folds An integer dictating how many folds to use for K-fold cross-validation that chooses the tuning parameter lambda when \code{rule.method} is \code{lasso} or \`ridge'. Default is 10.
+#' @param lambda.choice Either `min' or `1se', corresponding to the \code{s} argument in \code{predict.cv.glmnet()} from the \code{glmnet} package; only used when \code{propensity.method} or \code{rule.method} is `lasso' or `ridge'.
+#' @param OWL.lambda.seq Used when \code{prediction.approach=}`OWL', a numeric vector that corresponds to the \code{lambdas} argument in the \code{owl()} function from the \code{DynTxRegime} package.
+#' @param OWL.kernel Used when \code{prediction.approach=}`OWL', a character equal to either `linear' or `radial'. Corresponds to the \code{kernel} argument in the \code{owl()} function from the \code{DynTxRegime} package.
+#' @param OWL.kparam.seq Used when \code{prediction.approach=}`OWL' and \code{OWL.kernel=}`radial'.  Corresponds to the \code{kparam} argument in the \code{owl()} function from the \code{DynTxRegime} package.
+#' @param OWL.cvFolds Used when \code{prediction.approach=}`OWL', an integer corresponding to the \code{cvFolds} argument in the \code{owl()} function from the \code{DynTxRegime} package.
+#' @param OWL.verbose Used when \code{prediction.approach=}`OWL', a logical corresponding to the \code{verbose} argument in the \code{owl()} function from the \code{DynTxRegime} package.
+#' @param OWL.framework.shift.by.min Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome, OWL framework performs far better in simulation studies when the outcome was shifted to have a minimum of just above 0.
+#' @param direct.interactions.center.continuous.Y Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome, direct-interactions performed far better in simulation studies when the outcome was mean-centered.
+#' @param direct.interactions.exclude.A.from.penalty Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome and lasso/ridge used specified as the \code{rule.method}, direct-interactions performed far better in simulation studies when the coefficient corresponding to the treatmnet variable was excluded from the penalty function.
+#' @return A list with some combination of the following components (depending on specified \code{prediction.approach})
+#' \itemize{
+#'   \item \code{type.outcome}: The \code{type.outcome} specified above (used by other functions that are based on \code{BuildRule()})
+#'   \item \code{prediction.approach}: The \code{prediction.approach} specified above (used by other functions that are based on \code{BuildRule()})
+#'   \item \code{rule.method}: The \code{rule.method} specified above (used by other functions that are based on \code{BuildRule()})
+#'   \item \code{lambda.choice}: The \code{lambda.choice} specified above (used by other functions that are based on \code{BuildRule()})
+#'   \item \code{propensity.score.object}: A list containing the regression object from propensity score estimation. The list has two elements for \code{type.observation.weights=}`IPW.ratio' (the default for \code{prediction.approach=}`split.regression') and one element for \code{type.observation.weights=}`IPW.L' (the default for `OWL', `OWL.framework' and `direct.interactions') or \code{type.observation.weights=}`IPW.L.and.X'
+#'   \item \code{owl.object}: For \code{prediction.approach=}`OWL' only, the object returned by the \code{owl()} function in the \code{DynTxRegime} package.
+#'   \item \code{observation.weights}: The observation weights used for estimating the treatment rule
+#'   \item \code{rule.object}: For \code{prediction.approach=}`OWL.framework' or \code{prediction.approach=}`direct.interactions', the regression object rerturned from treatment rule estimation (to which the \code{coef()} function could be applied, for example)
+#'   \item \code{rule.object.control}: For \code{prediction.approach=}`split.regression' the regression object rerturned from treatment rule estimation (to which the \code{coef()} function could be applied, for example) that estimtaes the outcome variable for individuals who do not receive treatment.
+#'   \item \code{rule.object.treatment}: For \code{prediction.approach=}`split.regression' the regression object rerturned from treatment rule estimation (to which the \code{coef()} function could be applied, for example) that estimtaes the outcome variable for individuals who do receive treatment.
+
+#' }
+
+#' @examples
+#' set.seed(123)
+#' example.split <- SplitData(data=example_df, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+#' development.data <- example.split[example.split$partition == "development",]
+#' one.rule <- BuildRule(data=development.data,
+#'                      study.design="observational",
+#'                      prediction.approach="split.regression",
+#'                      name.outcome="no_relapse",
+#'                      type.outcome="binary",
+#'                      desirable.outcome=TRUE,
+#'                      name.treatment="intervention",
+#'                      names.influencing.treatment=c("prognosis", "clinic", "age"),
+#'                      names.influencing.rule=c("age", paste0("gene_", 1:10)),
+#'                      propensity.method="logistic.regression",
+#'                      rule.method="glm.regression")
+#' coef(one.rule$rule.object.control)
+#' coef(one.rule$rule.object.treatment)
+#' @import glmnet
+#' @export
+
 BuildRule <- function(data,
-                             study.design, #=c("RCT", "observational"),
-                             prediction.approach, #=c("OWL", "OWL.framework", "split.regression", "direct.interactions"), 
-                             name.outcome,
-                             type.outcome, #=c("binary", "continuous"),
-                             name.treatment,
-                             names.influencing.treatment,
-                             names.influencing.rule,
-                             additional.weights=rep(1, nrow(data)),
-                             desirable.outcome,
-                             propensity.method, 
-                             truncate.propensity.score=TRUE,
-                             truncate.propensity.score.threshold=0.05, 
-                             rule.method=NULL, 
-                             type.observation.weights=NULL,
-                             propensity.k.cv.folds=10,
-                             propensity.b.cv.repeats=1,
-                             rule.k.cv.folds=10,
-                             rule.b.cv.repeats=1,
-                             lambda.choice=c("min", "1se"),
-                             OWL.lambda.seq=NULL,
-                             OWL.n.lambda.seq=NULL,
-                             OWL.kernel="linear",
-                             OWL.kparam.seq=NULL,
-                             OWL.cvFolds=10,
-                             OWL.verbose=TRUE,
-                             OWL.framework.shift.by.min=TRUE,
-                             direct.interactions.center.continuous.Y=TRUE,
-                             direct.interactions.exclude.A.from.penalty=TRUE) {
+                      study.design, #=c("RCT", "observational"),
+                      prediction.approach, #=c("OWL", "OWL.framework", "split.regression", "direct.interactions"),
+                      name.outcome,
+                      type.outcome, #=c("binary", "continuous"),
+                      name.treatment,
+                      names.influencing.treatment=NULL,
+                      names.influencing.rule,
+                      desirable.outcome,
+                      rule.method,
+                      propensity.method,
+                      additional.weights=rep(1, nrow(data)),
+                      truncate.propensity.score=TRUE,
+                      truncate.propensity.score.threshold=0.05,
+                      type.observation.weights=NULL,
+                      propensity.k.cv.folds=10,
+                      rule.k.cv.folds=10,
+                      lambda.choice=c("min", "1se"),
+                      OWL.lambda.seq=NULL,
+                      OWL.kernel="linear",
+                      OWL.kparam.seq=NULL,
+                      OWL.cvFolds=10,
+                      OWL.verbose=TRUE,
+                      OWL.framework.shift.by.min=TRUE,
+                      direct.interactions.center.continuous.Y=TRUE,
+                      direct.interactions.exclude.A.from.penalty=TRUE) {
     # LOTS of checks
     if (is.data.frame(data) == FALSE) {
         stop("dataset must be a data frame")
@@ -36,6 +96,11 @@ BuildRule <- function(data,
     }
     if (!(study.design %in% c("RCT", "observational", "naive"))) {
         stop("study design needs to be RCT, observational, or naive")
+    }
+    if (study.design == "observational") {
+        if (is.null(names.influencing.treatment)) {
+            stop("names.influencing.treatment needs to be provided for an observational study design")
+        }
     }
     if (is.null(type.observation.weights) & study.design == "observational" & (prediction.approach %in% c("OWL", "OWL.framework"))) {
         type.observation.weights <- "IPW.L"
@@ -109,7 +174,6 @@ BuildRule <- function(data,
                                                          method=propensity.method,
                                                          lambda.choice=lambda.choice,
                                                          k.cv.folds=propensity.k.cv.folds,
-                                                         b.cv.repeats=propensity.b.cv.repeats,
                                                          include.intercept=TRUE)
         propensity.score.L.probability <- TruncateProbability(probability=propensity.score.L.object$one.fit.predicted.probability,
                                                                                threshold=truncate.propensity.score.threshold)
@@ -124,7 +188,6 @@ BuildRule <- function(data,
                                                          method=propensity.method,
                                                          lambda.choice=lambda.choice,
                                                          k.cv.folds=propensity.k.cv.folds,
-                                                         b.cv.repeats=propensity.b.cv.repeats,
                                                          include.intercept=TRUE)
         propensity.score.L.and.X.probability <- TruncateProbability(probability=propensity.score.L.and.X.object$one.fit.predicted.probability,
                                                                                         threshold=truncate.propensity.score.threshold)
@@ -138,7 +201,6 @@ BuildRule <- function(data,
                                                        method=propensity.method,
                                                        lambda.choice=lambda.choice,
                                                        k.cv.folds=propensity.k.cv.folds,
-                                                       b.cv.repeats=propensity.b.cv.repeats,
                                                        include.intercept=TRUE)
             propensity.score.X.probability <- TruncateProbability(probability=propensity.score.X.object$one.fit.predicted.probability,
                                                                                    threshold=truncate.propensity.score.threshold)
@@ -196,7 +258,6 @@ BuildRule <- function(data,
                                                                      DynTxRegime.method="OWL",
                                                                      predicted.propensity.score.larger.model=predicted.propensity.score.larger.model,
                                                                      lambda.seq=OWL.lambda.seq,
-                                                                     n.lambda.seq=OWL.n.lambda.seq,
                                                                      kernel=OWL.kernel,
                                                                      kparam.seq=OWL.kparam.seq,
                                                                      cvFolds=OWL.cvFolds,
@@ -224,20 +285,20 @@ BuildRule <- function(data,
         }
         predict.T.with.X.object <- DoPrediction(data.matrix=my.formatted.data$model.matrix.all,
                                                  data.df=my.formatted.data$df.model.matrix.all,
-                                                 name.response=response.for.OWL.framework, 
+                                                 name.response=response.for.OWL.framework,
                                                  type.response="binary",
                                                  names.features=names(my.formatted.data$df.model.matrix.X),
                                                  observation.weights=OWL.weights,
                                                  method=rule.method.for.OWL.framework,
                                                  lambda.choice=lambda.choice,
-                                                 k.cv.folds=propensity.k.cv.folds,
-                                                 b.cv.repeats=propensity.b.cv.repeats,
+                                                 k.cv.folds=rule.k.cv.folds,
                                                  include.intercept=TRUE)
         warning("the OWL framework approach assumes that larger values of the outcome variable are better")
         return(list("type.outcome"=type.outcome,
                        "propensity.score.object"=propensity.score.object,
                        "observation.weights"=OWL.weights,
                        "prediction.approach"=prediction.approach,
+                       "lambda.choice"=lambda.choice,  #03/25 added for consistency
                        "rule.method"=rule.method,
                       "rule.object"=predict.T.with.X.object$one.fit))
     } else if (prediction.approach == "split.regression") {
@@ -257,8 +318,7 @@ BuildRule <- function(data,
                                                          observation.weights=obs.weights[idx.control],
                                                          method=rule.method,
                                                          lambda.choice=lambda.choice,
-                                                         k.cv.folds=propensity.k.cv.folds,
-                                                         b.cv.repeats=propensity.b.cv.repeats,
+                                                         k.cv.folds=rule.k.cv.folds,
                                                          include.intercept=TRUE)
         predict.Y.with.X.object.treatment <- DoPrediction(data.matrix=my.formatted.data$model.matrix.all[idx.treatment, ],
                                                            data.df=my.formatted.data$df.model.matrix.all[idx.treatment, ],
@@ -268,10 +328,9 @@ BuildRule <- function(data,
                                                            observation.weights=obs.weights[idx.treatment],
                                                            method=rule.method,
                                                            lambda.choice=lambda.choice,
-                                                           k.cv.folds=propensity.k.cv.folds,
-                                                           b.cv.repeats=propensity.b.cv.repeats,
+                                                           k.cv.folds=rule.k.cv.folds,
                                                            include.intercept=TRUE)
-        return(list("type.outcome"=type.outcome, 
+        return(list("type.outcome"=type.outcome,
                       "propensity.score.object"=propensity.score.object,
                       "observation.weights"=obs.weights,
                       "prediction.approach"=prediction.approach,
@@ -300,10 +359,9 @@ BuildRule <- function(data,
                                                       observation.weights=obs.weights,
                                                       method=rule.method,
                                                       lambda.choice=lambda.choice,
-                                                      k.cv.folds=propensity.k.cv.folds,
-                                                      b.cv.repeats=propensity.b.cv.repeats,
+                                                      k.cv.folds=rule.k.cv.folds,
                                                       include.intercept=FALSE,
-                                                      exclude.A.from.penalty=direct.interactions.exclude.A.from.penalty) 
+                                                      exclude.A.from.penalty=direct.interactions.exclude.A.from.penalty)
             ## can NOT use fitted values from the above call, but i think that's OK. i'll handle them correctly in the PredictRule() function
             return(list("type.outcome"=type.outcome,
                         "propensity.score.object"=propensity.score.object,

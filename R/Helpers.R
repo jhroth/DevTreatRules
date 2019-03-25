@@ -86,15 +86,11 @@ OneDynTxRegime <- function(data.matrix,
                                         predicted.propensity.score.larger.model=NULL,
                                         DynTxRegime.method="OWL", # c("OWL", "earl")
                                         lambda.seq=NULL,
-                                        n.lambda.seq=NULL,
                                         kernel=c("linear", "radial"),
                                         kparam.seq=NULL,
                                         cvFolds=10,
                                         OWL.verbose=TRUE) {
     kernel <- match.arg(kernel)
-    if (is.null(n.lambda.seq)) {
-        n.lambda.seq <- 10
-    }
     if (is.null(lambda.seq)) {
         lambda.seq <- 2 ^ seq(from=-5, to=5, by=1) # from Yingqi; using from -10 to 10 gave me more errors in simulation scenario 
     }
@@ -198,7 +194,6 @@ DoPrediction <- function(data.matrix,
                                   observation.weights,
                                   method,
                                   k.cv.folds,
-                                  b.cv.repeats,
                                   lambda.choice,
                                   include.intercept,
                                   exclude.A.from.penalty=FALSE) {

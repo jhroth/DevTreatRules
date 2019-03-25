@@ -1,4 +1,3 @@
-
 PredictRule <- function(BuildRule.object,
                                 new.X,
                                 desirable.outcome=NULL,
