@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<p>Here, we illustrate the <code>DevTreatRules</code> package by building and evaluating treatment rules based on the the example dataset included with the package.</p>
+<p>Here, we illustrate the <code>DevTreatRules</code> package by building and evaluating treatment rules based on the example dataset included with the package.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(example_df)
 ##   no_relapse intervention prognosis clinic age    gene_1     gene_2
 ## 1          1            0      Good      1  46 0.5310173 0.07099905
@@ -94,30 +94,30 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 ## 5 0.01259864
 ## 6 1.39081329</code></pre></div>
 <div id="split-the-dataset" class="section level2">
-<h2>Split the dataset</h2>
-<p>We can split the <code>example</code> dataset included in <code>DevTreatRules</code> by calling the <code>SplitData()</code> function</p>
+<h2>Split the Dataset</h2>
+<p>First, we split <code>example_df</code> into independent development/validation/evaluation partitions by calling the <code>SplitData()</code> function</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">123</span>)
 example.split &lt;-<span class="st"> </span><span class="kw">SplitData</span>(<span class="dt">data=</span>example_df, <span class="dt">n.sets=</span><span class="dv">3</span>, <span class="dt">split.proportions=</span><span class="kw">c</span>(<span class="fl">0.5</span>, <span class="fl">0.25</span>, <span class="fl">0.25</span>))
 <span class="kw">table</span>(example.split<span class="op">$</span>partition)
 ## 
 ## development  validation  evaluation 
 ##        2500        1250        1250</code></pre></div>
-<p>and forming independent development/validation/evaluation subsets based on the <code>partition</code> variable created above.</p>
+<p>and then forming independent datasets based on the <code>partition</code> variable created above.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(dplyr)
 development.data &lt;-<span class="st"> </span>example.split <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(partition <span class="op">==</span><span class="st"> &quot;development&quot;</span>)
 validation.data &lt;-<span class="st">  </span>example.split <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(partition <span class="op">==</span><span class="st"> &quot;validation&quot;</span>)
 evaluation.data &lt;-<span class="st">  </span>example.split <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(partition <span class="op">==</span><span class="st"> &quot;evaluation&quot;</span>)</code></pre></div>
 </div>
-<div id="decide-on-variable-roles" class="section level2">
-<h2>Decide on variable roles</h2>
+<div id="specify-variable-roles" class="section level2">
+<h2>Specify Variable Roles</h2>
 <p>Suppose we believe the variables <code>prognosis</code>, <code>clinic</code>, and <code>age</code> may have influenced treatment assignment. We would codify this knowledge into <code>DevTreatRules</code> by specifying the argument</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">names.influencing.treatment=<span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>)</code></pre></div>
-<p>in functions we will call later in this vignette. Further suppose that we don’t expect <code>prognosis</code> and <code>clinic</code> to be measured on the same scale in independent clinical settings where we would like to apply our estimated rule (so they are not sensible rule inputs). However, we do expect the gene expression measurements in <code>gene_1</code>, …, <code>gene_10</code> to potentially influence treatment response and also to be reliably measured in future settings (so they are sensible rule inputs). We will codify this in <code>DevTreatRules</code> with the argument</p>
+<p>in functions we will call later in this vignette. Further suppose that we don’t expect <code>prognosis</code> and <code>clinic</code> to be measured on the same scale in independent clinical settings where we would like to apply our estimated rule (so they are not sensible rule inputs). However, we do expect the gene expression measurements in <code>gene_1</code>, …, <code>gene_10</code> to potentially influence treatment response and also to be reliably measured in future settings (so they are sensible rule inputs). We specify this knowledge in <code>DevTreatRules</code> with the argument</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">names.influencing.rule=<span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>))</code></pre></div>
 </div>
 <div id="on-the-development-dataset-build-the-treatment-rule" class="section level2">
-<h2>On the development dataset, build the treatment rule</h2>
-<p>Although we could directly estimate a single treatment rule on the development dataset with the BuildRule function</p>
+<h2>On the Development Dataset, Build the Treatment Rule</h2>
+<p>Although we could directly estimate a single treatment rule on the development dataset with <code>BuildRule()</code> using, for example,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">one.rule &lt;-<span class="st"> </span><span class="kw">BuildRule</span>(<span class="dt">data=</span>development.data,
                       <span class="dt">study.design=</span><span class="st">&quot;observational&quot;</span>,
                       <span class="dt">prediction.approach=</span><span class="st">&quot;split.regression&quot;</span>,
@@ -129,30 +129,33 @@ evaluation.data &lt;-<span class="st">  </span>example.split <span class="op">%&
                       <span class="dt">names.influencing.rule=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
                       <span class="dt">propensity.method=</span><span class="st">&quot;logistic.regression&quot;</span>,
                       <span class="dt">rule.method=</span><span class="st">&quot;glm.regression&quot;</span>)</code></pre></div>
-<p>this has limited utility because it required us to specify just one approach (even if we don’t have a priori knowledge about which of split-regression, OWL framework, and direct-interactions approaches will perform best) and to specify just one regression method for the <code>propensity.score</code> and <code>rule.method</code> arguments (even if we are not sure whether standard GLM or penalized GLM that performs variable shrinkage/selection will yield a better rule).</p>
-<p>In view of this, it would be more useful to perform model selection to estimate rules for all combinations of split-regression/OWL framework/direct-interactions and standard/lasso/ridge logistic regression (e.g. by looping over calls to <code>BuildRule()</code>). The model-selection process is automated with the function BuildRulesOnValidation.</p>
+<p>this has limited utility because it required us to specify just one value for the <code>prediction.approach</code> argument (even if we don’t have <em>a priori</em> knowledge about which of split-regression, OWL framework, and direct-interactions approaches will perform best) and to specify just one regression method for the <code>propensity.score</code> and <code>rule.method</code> arguments (even if we are not sure whether standard GLM or lasso/ridge GLM will yield a better rule).</p>
+<p>In view of this, it would be more useful to perform model selection to estimate rules for different combinations of split-regression/OWL framework/direct-interactions and standard/lasso/ridge logistic regression (e.g. by looping over calls to <code>BuildRule()</code>). The model-selection process is automated in <code>CompareRulesOnValidation()</code>.</p>
 </div>
 <div id="on-the-validation-dataset-perform-model-selection" class="section level2">
-<h2>On the validation dataset, perform model selection</h2>
-<p>Here we will perform variable selection by calling <code>BuildRulesOnValidation()</code> with the arguments</p>
+<h2>On the Validation Dataset, Perform Model Selection</h2>
+<p>Here we will perform model selection by calling <code>CompareRulesOnValidation()</code> with the arguments</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">vec.approaches=<span class="kw">c</span>(<span class="st">&quot;split.regression&quot;</span>, <span class="st">&quot;OWL.framework&quot;</span>, <span class="st">&quot;direct.interactions&quot;</span>)
-vec.rule.methods=<span class="kw">c</span>(<span class="st">&quot;glm.regression&quot;</span>, <span class="st">&quot;lasso&quot;</span>, <span class="st">&quot;ridge&quot;</span>)
-vec.propensity.methods=<span class="kw">c</span>(<span class="st">&quot;logistic.regression&quot;</span>)</code></pre></div>
-<p>that reflect the modeling choices currently supported by <code>DevTreatRules</code>, and are actually the default values of the arguments in <code>BuildRulesOnValidation()</code>.</p>
+vec.rule.methods=<span class="kw">c</span>(<span class="st">&quot;glm.regression&quot;</span>, <span class="st">&quot;lasso&quot;</span>, <span class="st">&quot;ridge&quot;</span>)</code></pre></div>
+<p>which are actually the default values of <code>CompareRulesOnValidation()</code>, and</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">vec.propensity.methods=<span class="st">&quot;logistic.regression&quot;</span></code></pre></div>
+<p>Now we perform model selection by calling <code>CompareRuleonValdation()</code> with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">123</span>)
 model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnValidation</span>(<span class="dt">development.data=</span>development.data,
-                                                  <span class="dt">validation.data=</span>validation.data,
-                                                  <span class="dt">study.design.development=</span><span class="st">&quot;observational&quot;</span>,
-                                                  <span class="dt">vec.approaches=</span><span class="kw">c</span>(<span class="st">&quot;split.regression&quot;</span>, <span class="st">&quot;OWL.framework&quot;</span>, <span class="st">&quot;direct.interactions&quot;</span>),
-                                                  <span class="dt">vec.rule.methods=</span><span class="kw">c</span>(<span class="st">&quot;glm.regression&quot;</span>, <span class="st">&quot;lasso&quot;</span>, <span class="st">&quot;ridge&quot;</span>),
-                                                  <span class="dt">vec.propensity.methods=</span><span class="st">&quot;logistic.regression&quot;</span>,
-                                                  <span class="dt">name.outcome.development=</span><span class="st">&quot;no_relapse&quot;</span>,
-                                                  <span class="dt">type.outcome.development=</span><span class="st">&quot;binary&quot;</span>,
-                                                  <span class="dt">name.treatment.development=</span><span class="st">&quot;intervention&quot;</span>,
-                        <span class="dt">names.influencing.treatment.development=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
-                        <span class="dt">names.influencing.rule.development=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
-                                                  <span class="dt">desirable.outcome.development=</span><span class="ot">TRUE</span>)</code></pre></div>
-<p>We can look at the estimated ATEs/ABR on the validation dataset to decide which rule to ``lock in’’ to bring to the evaluation dataset. First for rules estimated with the split-regression approach </p>
+                <span class="dt">validation.data=</span>validation.data,
+                <span class="dt">study.design.development=</span><span class="st">&quot;observational&quot;</span>,
+                <span class="dt">vec.approaches=</span><span class="kw">c</span>(<span class="st">&quot;split.regression&quot;</span>, <span class="st">&quot;OWL.framework&quot;</span>, <span class="st">&quot;direct.interactions&quot;</span>),
+                <span class="dt">vec.rule.methods=</span><span class="kw">c</span>(<span class="st">&quot;glm.regression&quot;</span>, <span class="st">&quot;lasso&quot;</span>, <span class="st">&quot;ridge&quot;</span>),
+                <span class="dt">vec.propensity.methods=</span><span class="st">&quot;logistic.regression&quot;</span>,
+                <span class="dt">name.outcome.development=</span><span class="st">&quot;no_relapse&quot;</span>,
+                <span class="dt">type.outcome.development=</span><span class="st">&quot;binary&quot;</span>,
+                <span class="dt">name.treatment.development=</span><span class="st">&quot;intervention&quot;</span>,
+                <span class="dt">names.influencing.treatment.development=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
+                <span class="dt">names.influencing.rule.development=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
+                <span class="dt">desirable.outcome.development=</span><span class="ot">TRUE</span>)</code></pre></div>
+<p>The object returned by <code>CompareRulesOnValidation</code> contains the following estimates computed on the validation set: number of individuals recommended to receive treatment (<code>Positives</code>), number of individuals recommended to not receive treatment (<code>Negatives</code>), the average treatment effect in each subset (<code>ATE in Positives</code> and <code>ATE in Negatives</code>), and average benefit of using the rule (<code>ABR</code>).</p>
+<p>We can compare these estimates for the nine treatment rules (three model specifications for each of the three approaches) to decide which rules to bring forward to the evaluation dataset.</p>
+<p>First, for rules estimated with the split-regression approach, we obtain the estimates </p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries[[<span class="st">&quot;split.regression&quot;</span>]] 
 ##                                                    Positives Negatives
 ## propensity_logistic.regression_rule_glm.regression       787       463
@@ -170,7 +173,7 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
 ## propensity_logistic.regression_rule_glm.regression 0.10904028
 ## propensity_logistic.regression_rule_lasso          0.08546798
 ## propensity_logistic.regression_rule_ridge          0.03832939</code></pre></div>
-<p>Next for the OWL framework </p>
+<p>Next, for the OWL framework we have </p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries[[<span class="st">&quot;OWL.framework&quot;</span>]] 
 ##                                                    Positives Negatives
 ## propensity_logistic.regression_rule_glm.regression       742       508
@@ -188,7 +191,7 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
 ## propensity_logistic.regression_rule_glm.regression 0.08988931
 ## propensity_logistic.regression_rule_lasso          0.03832939
 ## propensity_logistic.regression_rule_ridge          0.03832939</code></pre></div>
-<p>and, last, for the direct-interactions approach. </p>
+<p>and, last, for the direct-interactions approach </p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries[[<span class="st">&quot;direct.interactions&quot;</span>]] 
 ##                                                    Positives Negatives
 ## propensity_logistic.regression_rule_glm.regression      1124       126
@@ -206,14 +209,39 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
 ## propensity_logistic.regression_rule_glm.regression 0.08078141
 ## propensity_logistic.regression_rule_lasso          0.03832939
 ## propensity_logistic.regression_rule_ridge          0.03836215</code></pre></div>
-<p>Based on the estimates in the validation set, we decide to select two rules to bring forward to the evaluation set: split-regression with logistic/logistic as the rule/propensity methods and OWL framework with logistic/logistic as the rule/propensity methods.</p>
+<p>Based on the above estimates in the validation set, we decide to select two rules to bring forward to the evaluation set: split-regression with logistic/logistic as the propensity/rule methods and OWL framework with logistic/logistic as the propensity/rule methods.</p>
+<p>We can also see the underlying coefficient estimates for these rules with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rule.split &lt;-<span class="st"> </span>model.selection<span class="op">$</span>list.rules<span class="op">$</span>split.regression[[<span class="st">&quot;propensity_logistic.regression_rule_glm.regression&quot;</span>]]
+<span class="kw">coef</span>(rule.split<span class="op">$</span>rule.object.control)
+##  (Intercept)          age       gene_1       gene_2       gene_3 
+##  0.388518744  0.012299543 -0.412122635  0.047482501 -0.097929857 
+##       gene_4       gene_5       gene_6       gene_7       gene_8 
+## -0.128450083 -0.044386377 -0.135912557 -0.246068247  0.097460512 
+##       gene_9      gene_10 
+## -0.004977984  0.050264338
+<span class="kw">coef</span>(rule.split<span class="op">$</span>rule.object.treat)
+##  (Intercept)          age       gene_1       gene_2       gene_3 
+## -0.204358106 -0.002120024  0.295883086 -0.079181506 -0.036792693 
+##       gene_4       gene_5       gene_6       gene_7       gene_8 
+##  0.014692151  0.308744926 -0.001624233  0.028541657 -0.046254953 
+##       gene_9      gene_10 
+##  0.083317777  0.088698809</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rule.OWL &lt;-<span class="st"> </span>model.selection<span class="op">$</span>list.rules<span class="op">$</span>OWL.framework[[<span class="st">&quot;propensity_logistic.regression_rule_glm.regression&quot;</span>]]
+<span class="kw">coef</span>(rule.OWL<span class="op">$</span>rule.object)
+##  (Intercept)          age       gene_1       gene_2       gene_3 
+## -0.164793593 -0.007442362  0.282574653 -0.120767014 -0.145166107 
+##       gene_4       gene_5       gene_6       gene_7       gene_8 
+##  0.069026841  0.180280257  0.098949349  0.058407463  0.141297073 
+##       gene_9      gene_10 
+##  0.192256160 -0.128279062</code></pre></div>
 </div>
 <div id="on-the-evaluation-dataset-evaluate-the-selected-treatment-rules" class="section level2">
-<h2>On the evaluation dataset, evaluate the selected treatment rules</h2>
-<p>Since the validation dataset informed our model selection (i.e. we selected the specific two rules because they appeared best on the validation set), the ATE and ABR estimates from the validation set itself are not trustworthy estimates for performance of the rules in independent samples. To obtain a trustworthy estimate of the rules’ performance in independent samples drawn from the same population, we turn to the <code>EvaluateRule()</code> function applied to the <em>evaluation</em> dataset.</p>
+<h2>On the Evaluation Dataset, Evaluate the Selected Treatment Rules</h2>
+<p>Since the validation dataset informed our model selection (i.e. we selected these particular two rules because they appeared best on the validation set), the estimates from the validation set itself are not trustworthy estimates of performance in independent settings. To obtain a trustworthy estimate of the rules’ performance in independent samples drawn from the same population, we turn to the <code>EvaluateRule()</code> function applied to the <strong>evaluation</strong> dataset.</p>
+<p>First we obtain the estimated performance of the rule using split-regression with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">123</span>)
 split.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</span>(<span class="dt">data=</span>evaluation.data,
-                           <span class="dt">BuildRule.object=</span>model.selection<span class="op">$</span>list.rules<span class="op">$</span>split.regression[[<span class="st">&quot;propensity_logistic.regression_rule_glm.regression&quot;</span>]],
+                           <span class="dt">BuildRule.object=</span>rule.split,
                            <span class="dt">study.design=</span><span class="st">&quot;observational&quot;</span>,
                            <span class="dt">name.outcome=</span><span class="st">&quot;no_relapse&quot;</span>,
                            <span class="dt">type.outcome=</span><span class="st">&quot;binary&quot;</span>,
@@ -221,22 +249,8 @@ split.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</span>(<s
                            <span class="dt">name.treatment=</span><span class="st">&quot;intervention&quot;</span>,
                            <span class="dt">names.influencing.treatment=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
                            <span class="dt">names.influencing.rule=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
-                           <span class="dt">bootstrap.CI=</span><span class="ot">FALSE</span>,
-                           <span class="dt">bootstrap.CI.replications=</span><span class="dv">1000</span>)
-<span class="kw">set.seed</span>(<span class="dv">123</span>)
-OWL.framework.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</span>(<span class="dt">data=</span>evaluation.data,
-                           <span class="dt">BuildRule.object=</span>model.selection<span class="op">$</span>list.rules<span class="op">$</span>OWL.framework[[<span class="st">&quot;propensity_logistic.regression_rule_glm.regression&quot;</span>]],
-                           <span class="dt">study.design=</span><span class="st">&quot;observational&quot;</span>,
-                           <span class="dt">name.outcome=</span><span class="st">&quot;no_relapse&quot;</span>,
-                           <span class="dt">type.outcome=</span><span class="st">&quot;binary&quot;</span>,
-                           <span class="dt">desirable.outcome=</span><span class="ot">TRUE</span>,
-                           <span class="dt">name.treatment=</span><span class="st">&quot;intervention&quot;</span>,
-                           <span class="dt">names.influencing.treatment=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
-                           <span class="dt">names.influencing.rule=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
-                           <span class="dt">bootstrap.CI=</span><span class="ot">FALSE</span>,
-                           <span class="dt">bootstrap.CI.replications=</span><span class="dv">1000</span>)</code></pre></div>
-<p>which yields the following estimates:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">split.eval[<span class="kw">c</span>(<span class="st">&quot;n.test.positives&quot;</span>, <span class="st">&quot;n.test.negatives&quot;</span>, <span class="st">&quot;ATE.test.positives&quot;</span>, <span class="st">&quot;ATE.test.negatives&quot;</span>, <span class="st">&quot;ABR&quot;</span>)]
+                           <span class="dt">bootstrap.CI=</span><span class="ot">FALSE</span>)
+split.eval[<span class="kw">c</span>(<span class="st">&quot;n.test.positives&quot;</span>, <span class="st">&quot;n.test.negatives&quot;</span>, <span class="st">&quot;ATE.test.positives&quot;</span>, <span class="st">&quot;ATE.test.negatives&quot;</span>, <span class="st">&quot;ABR&quot;</span>)]
 ## $n.test.positives
 ## [1] 772
 ## 
@@ -250,7 +264,19 @@ OWL.framework.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</
 ## [1] -0.1800403
 ## 
 ## $ABR
-## [1] 0.1032475
+## [1] 0.1032475</code></pre></div>
+<p>Next, the rule from OWL framework yields the following estimates</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">123</span>)
+OWL.framework.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</span>(<span class="dt">data=</span>evaluation.data,
+                              <span class="dt">BuildRule.object=</span>rule.OWL,
+                              <span class="dt">study.design=</span><span class="st">&quot;observational&quot;</span>,
+                              <span class="dt">name.outcome=</span><span class="st">&quot;no_relapse&quot;</span>,
+                              <span class="dt">type.outcome=</span><span class="st">&quot;binary&quot;</span>,
+                              <span class="dt">desirable.outcome=</span><span class="ot">TRUE</span>,
+                              <span class="dt">name.treatment=</span><span class="st">&quot;intervention&quot;</span>,
+                              <span class="dt">names.influencing.treatment=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
+                              <span class="dt">names.influencing.rule=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
+                              <span class="dt">bootstrap.CI=</span><span class="ot">FALSE</span>)
 OWL.framework.eval[<span class="kw">c</span>(<span class="st">&quot;n.test.positives&quot;</span>, <span class="st">&quot;n.test.negatives&quot;</span>, <span class="st">&quot;ATE.test.positives&quot;</span>, <span class="st">&quot;ATE.test.negatives&quot;</span>, <span class="st">&quot;ABR&quot;</span>)]
 ## $n.test.positives
 ## [1] 744
@@ -269,7 +295,7 @@ OWL.framework.eval[<span class="kw">c</span>(<span class="st">&quot;n.test.posit
 <p>We could have also obtain bootstrap-based CIs for the ATE/ABR estimates (in both the validation and evaluation datasets) by specifying the arguments to <code>BuildRulesOnValidation</code> and <code>EvaluateRule()</code></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">bootstrap.CI=<span class="ot">TRUE</span>
 booststrap.CI.replications=<span class="dv">1000</span></code></pre></div>
-<p>(or for any desired number of replications) but we chose not to compute the CIs in this example to minimize run-time.</p>
+<p>(or for any desired number of replications) but we chose not to compute CIs in this example to minimize run-time.</p>
 </div>
 
 
