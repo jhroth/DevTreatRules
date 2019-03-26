@@ -1,5 +1,7 @@
 #' Build a Treatment Rule
 #'
+#' Perform principled development of a treatment rule (using the IPW approach to account for potential confounding) on a development dataset (i.e. on a training set) that is independent of datasets used for model selection (i.e. validation set) and rule evaluation (i.e. test set).
+#'
 #' @param data A data frame representing the **development** (i.e. training) dataset used for building a treatment rule
 #' @param study.design Either `observational', `RCT', or `naive'. For the \code{observational} design, the function will use inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function will use IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.
 #' @param prediction.approach One of `split-regression', `direct-interactions', `OWL', or `OWL framework'
@@ -8,8 +10,8 @@
 #' @param name.treatment A character indicating the name of the treatment variable in \code{data}
 #' @param names.influencing.treatment A character vector (or element) indicating the names of the variables in \code{data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.
 #' @param names.influencing.rule A character vector (or element) indicating the names of the variables in \code{data} that may influence response to treatment and are expected to be observed in future clinical settings
-#' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage. This can be used, for example, to account for a non-representative sampling design or an IPW adjustment for missingness. The default is a vector of 1s.
-#' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. a 1 for a binary outcome suggests a better outcome clinically than a 0). The \code{OWL.framework} and \code{OWL} prediction approach require a desirable outcome.
+#' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{data}. This can be used, for example, to account for a non-representative sampling design or an IPW adjustment for missingness. The default is a vector of 1s.
+#' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. a 1 for a binary outcome suggests a better outcome clinically than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome.
 #' @param rule.method One of `glm.regression', `lasso', or `ridge'. For \code{type.outcome=}`binary', `glm.regression' leads to logistic regression; for a \code{type.outcome=}`continuous', `glm.regression' specifies linear regression. This is the underlying regression model used to develop the treatment rule.
 #' @param propensity.method One of`logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational'.
 #' @param truncate.propensity.score A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be \code{truncate.propensity.score.threshold} away from 0 or 1.
@@ -25,19 +27,19 @@
 #' @param OWL.verbose Used when \code{prediction.approach=}`OWL', a logical corresponding to the \code{verbose} argument in the \code{owl()} function from the \code{DynTxRegime} package.
 #' @param OWL.framework.shift.by.min Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome, OWL framework performs far better in simulation studies when the outcome was shifted to have a minimum of just above 0.
 #' @param direct.interactions.center.continuous.Y Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome, direct-interactions performed far better in simulation studies when the outcome was mean-centered.
-#' @param direct.interactions.exclude.A.from.penalty Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome and lasso/ridge used specified as the \code{rule.method}, direct-interactions performed far better in simulation studies when the coefficient corresponding to the treatmnet variable was excluded from the penalty function.
+#' @param direct.interactions.exclude.A.from.penalty Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome and lasso/ridge used specified as the \code{rule.method}, direct-interactions performed far better in simulation studies when the coefficient corresponding to the treatment variable was excluded from the penalty function.
 #' @return A list with some combination of the following components (depending on specified \code{prediction.approach})
 #' \itemize{
 #'   \item \code{type.outcome}: The \code{type.outcome} specified above (used by other functions that are based on \code{BuildRule()})
 #'   \item \code{prediction.approach}: The \code{prediction.approach} specified above (used by other functions that are based on \code{BuildRule()})
 #'   \item \code{rule.method}: The \code{rule.method} specified above (used by other functions that are based on \code{BuildRule()})
 #'   \item \code{lambda.choice}: The \code{lambda.choice} specified above (used by other functions that are based on \code{BuildRule()})
-#'   \item \code{propensity.score.object}: A list containing the regression object from propensity score estimation. The list has two elements for \code{type.observation.weights=}`IPW.ratio' (the default for \code{prediction.approach=}`split.regression') and one element for \code{type.observation.weights=}`IPW.L' (the default for `OWL', `OWL.framework' and `direct.interactions') or \code{type.observation.weights=}`IPW.L.and.X'
+#'   \item \code{propensity.score.object}: A list containing the relevant regression object from propensity score estimation. The list has two elements for \code{type.observation.weights=}`IPW.ratio' (the default for \code{prediction.approach=}`split.regression'), has one element for \code{type.observation.weights=}`IPW.L' (the default for `OWL', `OWL.framework' and `direct.interactions'), has one element when \code{type.observation.weights=}`IPW.L.and.X', and is simply equal to NA if \code{study.design=}`RCT' (in which case propensity score would just be the inverse of sample proportion receiving treatment).
 #'   \item \code{owl.object}: For \code{prediction.approach=}`OWL' only, the object returned by the \code{owl()} function in the \code{DynTxRegime} package.
 #'   \item \code{observation.weights}: The observation weights used for estimating the treatment rule
-#'   \item \code{rule.object}: For \code{prediction.approach=}`OWL.framework' or \code{prediction.approach=}`direct.interactions', the regression object rerturned from treatment rule estimation (to which the \code{coef()} function could be applied, for example)
-#'   \item \code{rule.object.control}: For \code{prediction.approach=}`split.regression' the regression object rerturned from treatment rule estimation (to which the \code{coef()} function could be applied, for example) that estimtaes the outcome variable for individuals who do not receive treatment.
-#'   \item \code{rule.object.treatment}: For \code{prediction.approach=}`split.regression' the regression object rerturned from treatment rule estimation (to which the \code{coef()} function could be applied, for example) that estimtaes the outcome variable for individuals who do receive treatment.
+#'   \item \code{rule.object}: For \code{prediction.approach=}`OWL.framework' or \code{prediction.approach=}`direct.interactions', the regression object returned from treatment rule estimation (to which the \code{coef()} function could be applied, for example)
+#'   \item \code{rule.object.control}: For \code{prediction.approach=}`split.regression' the regression object returned from treatment rule estimation (to which the \code{coef()} function could be applied, for example) that estimates the outcome variable for individuals who do not receive treatment.
+#'   \item \code{rule.object.treatment}: For \code{prediction.approach=}`split.regression' the regression object returned from treatment rule estimation (to which the \code{coef()} function could be applied, for example) that estimates the outcome variable for individuals who do receive treatment.
 
 #' }
 
@@ -59,6 +61,7 @@
 #' coef(one.rule$rule.object.control)
 #' coef(one.rule$rule.object.treatment)
 #' @import glmnet
+#' @import DynTxRegime
 #' @export
 
 BuildRule <- function(data,
@@ -113,7 +116,7 @@ BuildRule <- function(data,
     }
     lambda.choice <- match.arg(lambda.choice)
     if (min(data[, name.outcome], na.rm=TRUE) < 0 & prediction.approach %in% c("OWL", "OWL.framework")) {
-        stop("negative values of the outcome are not allowed when fitting OWL or  OWL framework can accomodate this")
+        stop("negative values of the outcome are not allowed when fitting OWL or  OWL framework can accommodate this")
     }
     if (is.logical(desirable.outcome) == FALSE) {
         stop("desirable.outcome has to be TRUE or FALSE")

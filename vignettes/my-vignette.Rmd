@@ -140,6 +140,7 @@ split.eval <- EvaluateRule(data=evaluation.data,
                            name.treatment="intervention",
                            names.influencing.treatment=c("prognosis", "clinic", "age"),
                            names.influencing.rule=c("age", paste0("gene_", 1:10)),
+                           propensity.method="logistic.regression",
                            bootstrap.CI=FALSE)
 split.eval[c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")]
 ```
@@ -155,6 +156,7 @@ OWL.framework.eval <- EvaluateRule(data=evaluation.data,
                               name.treatment="intervention",
                               names.influencing.treatment=c("prognosis", "clinic", "age"),
                               names.influencing.rule=c("age", paste0("gene_", 1:10)),
+                              propensity.method="logistic.regression",
                               bootstrap.CI=FALSE)
 OWL.framework.eval[c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")]
 ```

@@ -1,9 +1,54 @@
+#' Quickly see the treatment rule implied by \code{BuildRule()}
+#' 
+#' Map the object returned by \code{BuildRule()} to the treatment rule corresponding to a particular dataset
+#'
+#' @param BuildRule.object The object returned by the \code{BuildRule()} function. 
+#' @param new.X A data frame representing the dataset for which the treatment rule is desired.
+#' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. a 1 for a binary outcome suggests a better outcome clinically than a 0). The \code{prediction.approach} choices \code{OWL.framework} and \code{OWL} in \code{BuildRule()} require a desirable outcome.
+#' @param clinical.threshold A numeric equal a positive number above which the predicted outcome under treatment must be superior to the predicted outcome under control for treatment to be recommended. Only used when \code{BuildRuleObject} was specified and derived from the split-regression or direct-interactions approach. Defaults to 0.
+#' @param return.predicted.response logical indicating whether the predicted response variable (for \code{split.regression}, \code{OWL.framework}, and \code{OWL} approaches) or score function (for \code{direct.interactions}) should be returned in addition to its mapping to a binary treatment recommendation. Default is \code{FALSE}
+#' @return
+#' \itemize{
+#' \item If \code{return.predicted.response=FALSE} (the default), then the single object returned is a numeric vector of 0s and 1s, with length equal to the number of rows in \code{new.X}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{new.X}.
+#' \item If \code{return.predicted.response=TRUE}, then the object returned is a list with some combination of the following components (depending on which prediction approach underlies the \code{BuildRule.object}).
+#' \itemize{
+#'   \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{new.X}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{new.X}.
+#'   \item \code{predicted.outcome}: A numeric vector showing the predicted values of the score function corresponding to \code{recommended.treatment}. Only returned if \code{return.predicted.response=TRUE} and the approach underlying \code{BuildRule.object}. was `direct.interactions'.
+#'   \item \code{predicted.outcome.under.control}: A numeric vector showing the predicted values of the outcome under no treatment which, along with \code{predicted.outcome.under.treatment}, corresponds to \code{recommended.treatment}. Only returned if \code{return.predicted.response=TRUE} and the approach underlying \code{BuildRule.object}. was `split.regression'.
+#'   \item \code{predicted.outcome.under.treatment}: A numeric vector showing the predicted values of the outcome under treatment which, along with \code{predicted.outcome.under.control}, corresponds to \code{recommended.treatment}. Only returned if \code{return.predicted.response=TRUE} and the approach underlying \code{BuildRule.object}. was `split.regression'.
+#'   \item \code{predicted.treatment.prob}: A numeric vector showing the predicted treatment probability that corresponds to \code{recommended.treatment}. Only returned if \code{return.predicted.response=TRUE} and the approach underlying \code{BuildRule.object}. was `OWL.framework'.
+#' }
+#' }
+#' @examples
+#' set.seed(123)
+#' example.split <- SplitData(data=example_df, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+#' development.data <- example.split[example.split$partition == "development",]
+#' validation.data <- example.split[example.split$partition == "validation",]
+#' one.rule <- BuildRule(data=development.data,
+#'                      study.design="observational",
+#'                      prediction.approach="split.regression",
+#'                      name.outcome="no_relapse",
+#'                      type.outcome="binary",
+#'                      desirable.outcome=TRUE,
+#'                      name.treatment="intervention",
+#'                      names.influencing.treatment=c("prognosis", "clinic", "age"),
+#'                      names.influencing.rule=c("age", paste0("gene_", 1:10)),
+#'                      propensity.method="logistic.regression",
+#'                      rule.method="glm.regression")
+#' one.prediction <- PredictRule(BuildRule.object=one.rule,
+#'                                         new.X=validation.data[, c("age", paste0("gene_", 1:10))],
+#'                                         desirable.outcome=TRUE,
+#'                                         clinical.threshold=0)
+#' table(one.prediction)
+#' @import glmnet
+#' @import DynTxRegime
+#' @export
+
 PredictRule <- function(BuildRule.object,
                                 new.X,
                                 desirable.outcome=NULL,
                                 clinical.threshold=0,
                                 return.predicted.response=FALSE) {
-#    if (is.numeric(new.X)) {
     if (is.data.frame(new.X) == FALSE) {
         stop("new.X must be a data frame")
     }
@@ -22,7 +67,7 @@ PredictRule <- function(BuildRule.object,
         if (is.null(desirable.outcome)) {
             stop("desirable.outcome needs to be specified when using split.regression or direct.interactions approach")
         }
-        stopifnot(clinical.threshold >=0)
+        stopifnot(clinical.threshold >= 0)
         if (BuildRule.object$rule.method %in% c("lasso", "ridge")) {
             if (BuildRule.object$lambda.choice == "min") {
                 optimal.lambda <- "lambda.min"
@@ -85,7 +130,7 @@ PredictRule <- function(BuildRule.object,
         stop("prediction approach needs to be one of split.regression, OWL, OWL.framework, and interactions.approach")
     }
     if (return.predicted.response == FALSE) {
-        return(recommended.treatment)
+        return(as.numeric(recommended.treatment))
     } else if (return.predicted.response == TRUE & prediction.approach == "direct.interactions") {
         return(list("recommended.treatment"=recommended.treatment,
                       "predicted.outcome"=predicted.outcome))
@@ -94,7 +139,7 @@ PredictRule <- function(BuildRule.object,
                     "predicted.outcome.under.treatment"=predicted.outcome.under.treatment,
                      "recommended.treatment"=recommended.treatment))
     } else if (return.predicted.response == TRUE & prediction.approach == "OWL.framework") {
-        return(list("predicted.outcome"=OWL.framework.predicted.response.prob,
+        return(list("predicted.treatment.prob"=OWL.framework.predicted.response.prob,
                       "recommended.treatment"=recommended.treatment))
     }
 }
