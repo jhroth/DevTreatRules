@@ -53,7 +53,7 @@ EvaluateRule(data, BuildRule.object = NULL, B = NULL, study.design,
 
 \item{propensity.k.cv.folds}{An integer dictating how many folds to use for K-fold cross-validation that chooses the tuning parameters when \code{propensity.method} is `lasso' or \`ridge'. Default is 10.}
 
-\item{bootstrap.CI}{Logical indicating whether the ATE/ABR estimates returned by \code{EvaluateRule()} should be accompanied by 95\% confidence intervals based on the bootstrap.}
+\item{bootstrap.CI}{Logical indicating whether the ATE/ABR estimates returned by \code{EvaluateRule()} should be accompanied by 95\% confidence intervals based on the bootstrap. Default is \code{FALSE}}
 
 \item{bootstrap.CI.replications}{An integer specifying how many bootstrap replications should underlie the computed CIs. Default is 1000.}
 

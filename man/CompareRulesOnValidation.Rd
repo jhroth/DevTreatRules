@@ -23,7 +23,7 @@ CompareRulesOnValidation(development.data, validation.data,
   propensity.method.validation = "logistic.regression",
   additional.weights.validation = rep(1, nrow(validation.data)),
   truncate.propensity.score = TRUE,
-  truncate.propensity.score.threshold = 0.05, rule.method = NULL,
+  truncate.propensity.score.threshold = 0.05,
   type.observation.weights = NULL, propensity.k.cv.folds = 10,
   rule.k.cv.folds = 10, lambda.choice = c("min", "1se"),
   OWL.lambda.seq = NULL, OWL.kernel = "linear", OWL.kparam.seq = NULL,
@@ -41,11 +41,13 @@ CompareRulesOnValidation(development.data, validation.data,
 
 \item{vec.rule.methods}{A character vector (or element) indicating the values of the \code{rule.method} to be used for building the rule with \code{BuildRule()}. Default is \code{c(`glm.regression', `lasso', `ridge')}}
 
-\item{vec.propensity.methods}{A character vector (or element) indicating the values of \code{propensity.method} to be used for building the rule with \code{Build.Rule()}.Default is `logistic.regression' to allow for estimation of bootstrap-based CIs.}
+\item{vec.propensity.methods}{A character vector (or element) indicating the values of \code{propensity.method} to be used for building the rule with \code{Build.Rule()}. Default is `logistic.regression' to allow for estimation of bootstrap-based CIs.}
 
 \item{study.design.development}{Either `observational', `RCT', or `naive',representing the study design on the development dataset. For the \code{observational} design, the function will use inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function will use IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.}
 
 \item{name.outcome.development}{A character indicating the name of the outcome variable in \code{development.data}}
+
+\item{type.outcome.development}{Either `binary' or `continuous', the form of \code{name.outcome.development}}
 
 \item{name.treatment.development}{A character indicating the name of the treatment variable in \code{development.data}}
 
@@ -61,6 +63,8 @@ CompareRulesOnValidation(development.data, validation.data,
 
 \item{name.outcome.validation}{A character indicating the name of the outcome variable in \code{validation.data}. Default is the value of \code{name.outcome.development}}
 
+\item{type.outcome.validation}{Either `binary' or `continuous', the form of \code{name.outcome.validation}. Default is the value of \code{type.outcome.development}}
+
 \item{name.treatment.validation}{A character indicating the name of the treatment variable in \code{validation.data}. Default is the value of \code{name.treatment.development}}
 
 \item{names.influencing.treatment.validation}{A character vector (or element) indicating the names of the variables in \code{development.data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'. Note that \code{names.influencing.treatment} differ from its values on the development dataset on which the treatment rule was built. Default is the value of \code{names.influencing.treatment.development}}
@@ -68,6 +72,10 @@ CompareRulesOnValidation(development.data, validation.data,
 \item{names.influencing.rule.validation}{A character vector (or element) indicating the names of the variables in \code{validation.data} that may influence response to treatment and are expected to be observed in future clinical settings. Default is the value of \code{names.influencing.rule.development}}
 
 \item{desirable.outcome.validation}{A logical equal to \code{TRUE} if higher values of the outcome on \code{validation,data}  are considered desirable (e.g. a 1 for a binary outcome suggests a better outcome clinically than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome. Default is the value of \code{desirable.outcome.development}}
+
+\item{clinical.threshold.validation}{A numeric equal a positive number above which the predicted outcome under treatment must be superior to the predicted outcome under control for treatment to be recommended. Only used when \code{BuildRuleObject} was specified and derived from the split-regression or direct-interactions approach. Defaults to 0}
+
+\item{propensity.method.validation}{One of`logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational' on \code{validation.data}. If \code{bootstrap.CI=TRUE}, then \code{propensity.method} must be `logistic.regression'. Default is `logistic.regression' to allow for estimation of bootstrap-based CIs.}
 
 \item{additional.weights.validation}{A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{development.data}. This can be used, for example, to account for a non-representative sampling design or an IPW adjustment for missingness. The default is a vector of 1s.}
 
@@ -98,6 +106,10 @@ CompareRulesOnValidation(development.data, validation.data,
 \item{direct.interactions.center.continuous.Y}{Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome, direct-interactions performed far better in simulation studies when the outcome was mean-centered.}
 
 \item{direct.interactions.exclude.A.from.penalty}{Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome and lasso/ridge used specified as the \code{rule.method}, direct-interactions performed far better in simulation studies when the coefficient corresponding to the treatment variable was excluded from the penalty function.}
+
+\item{bootstrap.CI}{Logical indicating whether the ATE/ABR estimates on the validation set should be accompanied by 95\% confidence intervals based on the bootstrap. Default is \code{FALSE}}
+
+\item{bootstrap.CI.replications}{An integer specifying how many bootstrap replications should underlie the computed CIs. Default is 1000}
 }
 \value{
 A list with components:

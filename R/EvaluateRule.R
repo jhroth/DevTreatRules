@@ -21,7 +21,7 @@
 #' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{data}.. This can be used, for example, to account for a non-representative sampling design or an IPW adjustment for missingness. The default is a vector of 1s.
 #' @param lambda.choice Either `min' or `1se', corresponding to the \code{s} argument in \code{predict.cv.glmnet()} from the \code{glmnet} package; only used when \code{propensity.method} or \code{rule.method} is `lasso' or `ridge'.
 #' @param propensity.k.cv.folds An integer dictating how many folds to use for K-fold cross-validation that chooses the tuning parameters when \code{propensity.method} is `lasso' or \`ridge'. Default is 10.
-#' @param bootstrap.CI Logical indicating whether the ATE/ABR estimates returned by \code{EvaluateRule()} should be accompanied by 95\% confidence intervals based on the bootstrap.
+#' @param bootstrap.CI Logical indicating whether the ATE/ABR estimates returned by \code{EvaluateRule()} should be accompanied by 95\% confidence intervals based on the bootstrap. Default is \code{FALSE}
 #' @param bootstrap.CI.replications An integer specifying how many bootstrap replications should underlie the computed CIs. Default is 1000.
 #' @param bootstrap.type One character element specifying the type of bootstrap CI that should be computed. Currently the only supported option is \code{bootstrap.type=}`basic', but this may be expanded in the future.
 #' @return A list with some combination of the following components (depending on whether \code{bootstrap.CI} is \code{TRUE} or \code{FALSE})
