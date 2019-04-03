@@ -1,7 +1,7 @@
 Package: DevTreatRules
 Type: Package
 Title: Develop Treatment Rules With Observational Data
-Version: 0.1.0
+Version: 1.0.0
 Authors@R: c(person("Jeremy", "Roth", email = "jhroth@uw.edu", role=c("cre", "aut")),
                          person("Noah", "Simon", email = "nrsimon@uw.edu", role="aut"))
 Description: More about what it does (maybe more than one line)

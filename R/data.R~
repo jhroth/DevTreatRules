@@ -1,6 +1,6 @@
 #' Simulated dataset for package \code{DevTreatRule}
 #'
-#' Simulated observational dataset reporting the clinical outcome of remaing relapse-free along with 14 additional baseline characteristics that may influence either treatment assignment, response to treatment, or both.
+#' Simulated observational dataset reporting an indicator of remaining relapse-free at the end of the study period (clinical outcome) along with 14 additional baseline characteristics that may influence either treatment assignment, response to treatment, or both.
 #'
 #' @format A data frame with 5000 rows and 15 variables:
 #' \itemize{

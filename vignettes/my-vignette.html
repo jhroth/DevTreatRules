@@ -71,33 +71,26 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 <p>Here, we illustrate the <code>DevTreatRules</code> package by building and evaluating treatment rules based on the example dataset included with the package.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(example_df)
-##   no_relapse intervention prognosis clinic age    gene_1     gene_2
-## 1          1            0      Good      1  46 0.5310173 0.07099905
-## 2          0            1      Poor      3  51 0.7442478 0.71140730
-## 3          1            0      Poor      3  62 1.1457067 0.49774589
-## 4          1            0      Good      5  51 1.8164156 1.75836075
-## 5          1            1      Good      4  52 0.4033639 0.63595776
-## 6          1            1      Poor      6  51 1.7967794 0.64224101
-##       gene_3    gene_4    gene_5    gene_6    gene_7     gene_8    gene_9
-## 1 0.12942499 0.4267279 0.4212055 0.4020566 0.8306180 0.01360592 1.1860618
-## 2 1.35322480 1.9387141 0.2295728 0.2278341 0.2819428 1.34130370 1.1057664
-## 3 1.47074339 1.4555414 0.2907281 0.5434910 0.9150085 0.48388632 1.1934081
-## 4 0.22259933 0.6879271 0.6198644 1.5705087 1.6060260 1.99863441 0.7852614
-## 5 0.09330924 0.2880235 0.3004841 1.2759616 0.6422256 1.90029195 0.5207518
-## 6 0.26182062 0.2771150 1.0533635 0.9391015 1.7362673 0.23480846 1.4797667
-##      gene_10
-## 1 1.88311575
-## 2 0.66055448
-## 3 0.62333391
-## 4 1.76844683
-## 5 0.01259864
-## 6 1.39081329</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(obsStudyGeneExpressions)
+##   no_relapse intervention prognosis clinic age gene_1 gene_2 gene_3 gene_4
+## 1          1            0      Good      1  46  0.531  0.071 0.1294  0.427
+## 2          0            1      Poor      3  51  0.744  0.711 1.3532  1.939
+## 3          1            0      Poor      3  62  1.146  0.498 1.4707  1.456
+## 4          1            0      Good      5  51  1.816  1.758 0.2226  0.688
+## 5          1            1      Good      4  52  0.403  0.636 0.0933  0.288
+## 6          1            1      Poor      6  51  1.797  0.642 0.2618  0.277
+##   gene_5 gene_6 gene_7 gene_8 gene_9 gene_10
+## 1  0.421  0.402  0.831 0.0136  1.186  1.8831
+## 2  0.230  0.228  0.282 1.3413  1.106  0.6606
+## 3  0.291  0.543  0.915 0.4839  1.193  0.6233
+## 4  0.620  1.571  1.606 1.9986  0.785  1.7684
+## 5  0.300  1.276  0.642 1.9003  0.521  0.0126
+## 6  1.053  0.939  1.736 0.2348  1.480  1.3908</code></pre></div>
 <div id="split-the-dataset" class="section level2">
 <h2>Split the Dataset</h2>
-<p>First, we split <code>example_df</code> into independent development/validation/evaluation partitions by calling the <code>SplitData()</code> function</p>
+<p>First, we split <code>obsStudyGeneExpressions</code> into independent development/validation/evaluation partitions by calling the <code>SplitData()</code> function</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">123</span>)
-example.split &lt;-<span class="st"> </span><span class="kw">SplitData</span>(<span class="dt">data=</span>example_df, <span class="dt">n.sets=</span><span class="dv">3</span>, <span class="dt">split.proportions=</span><span class="kw">c</span>(<span class="fl">0.5</span>, <span class="fl">0.25</span>, <span class="fl">0.25</span>))
+example.split &lt;-<span class="st"> </span><span class="kw">SplitData</span>(<span class="dt">data=</span>obsStudyGeneExpressions, <span class="dt">n.sets=</span><span class="dv">3</span>, <span class="dt">split.proportions=</span><span class="kw">c</span>(<span class="fl">0.5</span>, <span class="fl">0.25</span>, <span class="fl">0.25</span>))
 <span class="kw">table</span>(example.split<span class="op">$</span>partition)
 ## 
 ## development  validation  evaluation 
@@ -129,17 +122,17 @@ evaluation.data &lt;-<span class="st">  </span>example.split <span class="op">%&
                       <span class="dt">names.influencing.rule=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
                       <span class="dt">propensity.method=</span><span class="st">&quot;logistic.regression&quot;</span>,
                       <span class="dt">rule.method=</span><span class="st">&quot;glm.regression&quot;</span>)</code></pre></div>
-<p>this has limited utility because it required us to specify just one value for the <code>prediction.approach</code> argument (even if we don’t have <em>a priori</em> knowledge about which of split-regression, OWL framework, and direct-interactions approaches will perform best) and to specify just one regression method for the <code>propensity.score</code> and <code>rule.method</code> arguments (even if we are not sure whether standard GLM or lasso/ridge GLM will yield a better rule).</p>
-<p>In view of this, it would be more useful to perform model selection to estimate rules for different combinations of split-regression/OWL framework/direct-interactions and standard/lasso/ridge logistic regression (e.g. by looping over calls to <code>BuildRule()</code>). The model-selection process is automated in <code>CompareRulesOnValidation()</code>.</p>
+<p>this has limited utility because it required us to specify just one value for the <code>prediction.approach</code> argument (even if we don’t have <em>a priori</em> knowledge about which of split-regression, OWL framework, and direct-interactions approaches will perform best) and to specify just one regression method for the <code>propensity.score</code> and <code>rule.method</code> arguments (even if we are not sure whether standard logistic regression or lasso/ridge logistic regression will yield a better rule).</p>
+<p>Instead, it would be more useful to perform model selection to estimate rules for different combinations of split-regression/OWL framework/direct-interactions and standard/lasso/ridge logistic regression (e.g. by looping over calls to <code>BuildRule()</code>). The model-selection process is automated in <code>CompareRulesOnValidation()</code>.</p>
 </div>
 <div id="on-the-validation-dataset-perform-model-selection" class="section level2">
 <h2>On the Validation Dataset, Perform Model Selection</h2>
 <p>Here we will perform model selection by calling <code>CompareRulesOnValidation()</code> with the arguments</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">vec.approaches=<span class="kw">c</span>(<span class="st">&quot;split.regression&quot;</span>, <span class="st">&quot;OWL.framework&quot;</span>, <span class="st">&quot;direct.interactions&quot;</span>)
 vec.rule.methods=<span class="kw">c</span>(<span class="st">&quot;glm.regression&quot;</span>, <span class="st">&quot;lasso&quot;</span>, <span class="st">&quot;ridge&quot;</span>)</code></pre></div>
-<p>which are actually the default values of <code>CompareRulesOnValidation()</code>, and</p>
+<p>which are actually the default values of <code>CompareRulesOnValidation()</code>, and with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">vec.propensity.methods=<span class="st">&quot;logistic.regression&quot;</span></code></pre></div>
-<p>Now we perform model selection by calling <code>CompareRuleonValdation()</code> with</p>
+<p>Now we perform model selection by calling <code>CompareRulesOnValidation()</code></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">123</span>)
 model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnValidation</span>(<span class="dt">development.data=</span>development.data,
                 <span class="dt">validation.data=</span>validation.data,
@@ -153,8 +146,7 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
                 <span class="dt">names.influencing.treatment.development=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
                 <span class="dt">names.influencing.rule.development=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
                 <span class="dt">desirable.outcome.development=</span><span class="ot">TRUE</span>)</code></pre></div>
-<p>The object returned by <code>CompareRulesOnValidation</code> contains the following estimates computed on the validation set: number of individuals recommended to receive treatment (<code>Positives</code>), number of individuals recommended to not receive treatment (<code>Negatives</code>), the average treatment effect in each subset (<code>ATE in Positives</code> and <code>ATE in Negatives</code>), and average benefit of using the rule (<code>ABR</code>).</p>
-<p>We can compare these estimates for the nine treatment rules (three model specifications for each of the three approaches) to decide which rules to bring forward to the evaluation dataset.</p>
+<p>We can compare these estimates for the nine treatment rules (three approaches, three combinations of rule/propensity methods) to decide which rules to bring forward to the evaluation dataset.</p>
 <p>First, for rules estimated with the split-regression approach, we obtain the estimates </p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries[[<span class="st">&quot;split.regression&quot;</span>]] 
 ##                                                    Positives Negatives
@@ -162,17 +154,13 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
 ## propensity_logistic.regression_rule_lasso               1089       161
 ## propensity_logistic.regression_rule_ridge               1250         0
 ##                                                    ATE in Positives
-## propensity_logistic.regression_rule_glm.regression       0.11122870
-## propensity_logistic.regression_rule_lasso                0.06001908
-## propensity_logistic.regression_rule_ridge                0.03832939
-##                                                    ATE in Negatives
-## propensity_logistic.regression_rule_glm.regression       -0.1053204
-## propensity_logistic.regression_rule_lasso                -0.2576037
-## propensity_logistic.regression_rule_ridge                        NA
-##                                                           ABR
-## propensity_logistic.regression_rule_glm.regression 0.10904028
-## propensity_logistic.regression_rule_lasso          0.08546798
-## propensity_logistic.regression_rule_ridge          0.03832939</code></pre></div>
+## propensity_logistic.regression_rule_glm.regression           0.1112
+## propensity_logistic.regression_rule_lasso                    0.0600
+## propensity_logistic.regression_rule_ridge                    0.0383
+##                                                    ATE in Negatives    ABR
+## propensity_logistic.regression_rule_glm.regression           -0.105 0.1090
+## propensity_logistic.regression_rule_lasso                    -0.258 0.0855
+## propensity_logistic.regression_rule_ridge                        NA 0.0383</code></pre></div>
 <p>Next, for the OWL framework we have </p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries[[<span class="st">&quot;OWL.framework&quot;</span>]] 
 ##                                                    Positives Negatives
@@ -180,17 +168,13 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
 ## propensity_logistic.regression_rule_lasso               1250         0
 ## propensity_logistic.regression_rule_ridge               1250         0
 ##                                                    ATE in Positives
-## propensity_logistic.regression_rule_glm.regression       0.10305639
-## propensity_logistic.regression_rule_lasso                0.03832939
-## propensity_logistic.regression_rule_ridge                0.03832939
-##                                                    ATE in Negatives
-## propensity_logistic.regression_rule_glm.regression      -0.07065708
-## propensity_logistic.regression_rule_lasso                        NA
-## propensity_logistic.regression_rule_ridge                        NA
-##                                                           ABR
-## propensity_logistic.regression_rule_glm.regression 0.08988931
-## propensity_logistic.regression_rule_lasso          0.03832939
-## propensity_logistic.regression_rule_ridge          0.03832939</code></pre></div>
+## propensity_logistic.regression_rule_glm.regression           0.1031
+## propensity_logistic.regression_rule_lasso                    0.0383
+## propensity_logistic.regression_rule_ridge                    0.0383
+##                                                    ATE in Negatives    ABR
+## propensity_logistic.regression_rule_glm.regression          -0.0707 0.0899
+## propensity_logistic.regression_rule_lasso                        NA 0.0383
+## propensity_logistic.regression_rule_ridge                        NA 0.0383</code></pre></div>
 <p>and, last, for the direct-interactions approach </p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries[[<span class="st">&quot;direct.interactions&quot;</span>]] 
 ##                                                    Positives Negatives
@@ -198,47 +182,48 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
 ## propensity_logistic.regression_rule_lasso               1250         0
 ## propensity_logistic.regression_rule_ridge               1243         7
 ##                                                    ATE in Positives
-## propensity_logistic.regression_rule_glm.regression       0.06211271
-## propensity_logistic.regression_rule_lasso                0.03832939
-## propensity_logistic.regression_rule_ridge                0.03856171
-##                                                    ATE in Negatives
-## propensity_logistic.regression_rule_glm.regression     -0.247318091
-## propensity_logistic.regression_rule_lasso                        NA
-## propensity_logistic.regression_rule_ridge              -0.002925383
-##                                                           ABR
-## propensity_logistic.regression_rule_glm.regression 0.08078141
-## propensity_logistic.regression_rule_lasso          0.03832939
-## propensity_logistic.regression_rule_ridge          0.03836215</code></pre></div>
-<p>Based on the above estimates in the validation set, we decide to select two rules to bring forward to the evaluation set: split-regression with logistic/logistic as the propensity/rule methods and OWL framework with logistic/logistic as the propensity/rule methods.</p>
+## propensity_logistic.regression_rule_glm.regression           0.0621
+## propensity_logistic.regression_rule_lasso                    0.0383
+## propensity_logistic.regression_rule_ridge                    0.0386
+##                                                    ATE in Negatives    ABR
+## propensity_logistic.regression_rule_glm.regression         -0.24732 0.0808
+## propensity_logistic.regression_rule_lasso                        NA 0.0383
+## propensity_logistic.regression_rule_ridge                  -0.00293 0.0384</code></pre></div>
+<p>Based on the above estimates in the validation set, we decide to select two rules to bring forward to the evaluation set: split-regression with logistic/logistic as the propensity/rule methods</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries<span class="op">$</span>split.regression[<span class="st">&quot;propensity_logistic.regression_rule_glm.regression&quot;</span>, ]
+##        Positives        Negatives ATE in Positives ATE in Negatives 
+##          787.000          463.000            0.111           -0.105 
+##              ABR 
+##            0.109</code></pre></div>
+<p>and OWL framework with logistic/logistic as the propensity/rule methods</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries<span class="op">$</span>OWL.framework[<span class="st">&quot;propensity_logistic.regression_rule_glm.regression&quot;</span>, ]
+##        Positives        Negatives ATE in Positives ATE in Negatives 
+##         742.0000         508.0000           0.1031          -0.0707 
+##              ABR 
+##           0.0899</code></pre></div>
 <p>We can also see the underlying coefficient estimates for these rules with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rule.split &lt;-<span class="st"> </span>model.selection<span class="op">$</span>list.rules<span class="op">$</span>split.regression[[<span class="st">&quot;propensity_logistic.regression_rule_glm.regression&quot;</span>]]
 <span class="kw">coef</span>(rule.split<span class="op">$</span>rule.object.control)
-##  (Intercept)          age       gene_1       gene_2       gene_3 
-##  0.388518744  0.012299543 -0.412122635  0.047482501 -0.097929857 
-##       gene_4       gene_5       gene_6       gene_7       gene_8 
-## -0.128450083 -0.044386377 -0.135912557 -0.246068247  0.097460512 
-##       gene_9      gene_10 
-## -0.004977984  0.050264338
+## (Intercept)         age      gene_1      gene_2      gene_3      gene_4 
+##     0.38852     0.01230    -0.41212     0.04748    -0.09793    -0.12845 
+##      gene_5      gene_6      gene_7      gene_8      gene_9     gene_10 
+##    -0.04439    -0.13591    -0.24607     0.09746    -0.00498     0.05026
 <span class="kw">coef</span>(rule.split<span class="op">$</span>rule.object.treat)
-##  (Intercept)          age       gene_1       gene_2       gene_3 
-## -0.204358106 -0.002120024  0.295883086 -0.079181506 -0.036792693 
-##       gene_4       gene_5       gene_6       gene_7       gene_8 
-##  0.014692151  0.308744926 -0.001624233  0.028541657 -0.046254953 
-##       gene_9      gene_10 
-##  0.083317777  0.088698809</code></pre></div>
+## (Intercept)         age      gene_1      gene_2      gene_3      gene_4 
+##    -0.20436    -0.00212     0.29588    -0.07918    -0.03679     0.01469 
+##      gene_5      gene_6      gene_7      gene_8      gene_9     gene_10 
+##     0.30874    -0.00162     0.02854    -0.04625     0.08332     0.08870</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rule.OWL &lt;-<span class="st"> </span>model.selection<span class="op">$</span>list.rules<span class="op">$</span>OWL.framework[[<span class="st">&quot;propensity_logistic.regression_rule_glm.regression&quot;</span>]]
 <span class="kw">coef</span>(rule.OWL<span class="op">$</span>rule.object)
-##  (Intercept)          age       gene_1       gene_2       gene_3 
-## -0.164793593 -0.007442362  0.282574653 -0.120767014 -0.145166107 
-##       gene_4       gene_5       gene_6       gene_7       gene_8 
-##  0.069026841  0.180280257  0.098949349  0.058407463  0.141297073 
-##       gene_9      gene_10 
-##  0.192256160 -0.128279062</code></pre></div>
+## (Intercept)         age      gene_1      gene_2      gene_3      gene_4 
+##    -0.16479    -0.00744     0.28257    -0.12077    -0.14517     0.06903 
+##      gene_5      gene_6      gene_7      gene_8      gene_9     gene_10 
+##     0.18028     0.09895     0.05841     0.14130     0.19226    -0.12828</code></pre></div>
 </div>
-<div id="on-the-evaluation-dataset-evaluate-the-selected-treatment-rules" class="section level2">
-<h2>On the Evaluation Dataset, Evaluate the Selected Treatment Rules</h2>
-<p>Since the validation dataset informed our model selection (i.e. we selected these particular two rules because they appeared best on the validation set), the estimates from the validation set itself are not trustworthy estimates of performance in independent settings. To obtain a trustworthy estimate of the rules’ performance in independent samples drawn from the same population, we turn to the <code>EvaluateRule()</code> function applied to the <strong>evaluation</strong> dataset.</p>
-<p>First we obtain the estimated performance of the rule using split-regression with</p>
+<div id="on-the-evaluation-dataset-evaluate-the-selected-rules" class="section level2">
+<h2>On the Evaluation Dataset, Evaluate the Selected Rules</h2>
+<p>Since the validation dataset informed our model selection (i.e. we selected these particular two rules because they appeared best on the validation set), the estimates from the validation set itself are not trustworthy estimates of performance in independent settings. To obtain a trustworthy estimate of the rules’ performance in independent samples drawn from the same population, we turn to the <code>EvaluateRule()</code> function applied to the independent <strong>evaluation</strong> dataset.</p>
+<p>First, we obtain the estimated performance of the rule using split-regression with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">123</span>)
 split.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</span>(<span class="dt">data=</span>evaluation.data,
                            <span class="dt">BuildRule.object=</span>rule.split,
@@ -249,6 +234,7 @@ split.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</span>(<s
                            <span class="dt">name.treatment=</span><span class="st">&quot;intervention&quot;</span>,
                            <span class="dt">names.influencing.treatment=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
                            <span class="dt">names.influencing.rule=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
+                           <span class="dt">propensity.method=</span><span class="st">&quot;logistic.regression&quot;</span>,
                            <span class="dt">bootstrap.CI=</span><span class="ot">FALSE</span>)
 split.eval[<span class="kw">c</span>(<span class="st">&quot;n.test.positives&quot;</span>, <span class="st">&quot;n.test.negatives&quot;</span>, <span class="st">&quot;ATE.test.positives&quot;</span>, <span class="st">&quot;ATE.test.negatives&quot;</span>, <span class="st">&quot;ABR&quot;</span>)]
 ## $n.test.positives
@@ -258,13 +244,13 @@ split.eval[<span class="kw">c</span>(<span class="st">&quot;n.test.positives&quo
 ## [1] 478
 ## 
 ## $ATE.test.positives
-## [1] 0.05569962
+## [1] 0.0557
 ## 
 ## $ATE.test.negatives
-## [1] -0.1800403
+## [1] -0.18
 ## 
 ## $ABR
-## [1] 0.1032475</code></pre></div>
+## [1] 0.103</code></pre></div>
 <p>Next, the rule from OWL framework yields the following estimates</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">123</span>)
 OWL.framework.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</span>(<span class="dt">data=</span>evaluation.data,
@@ -276,6 +262,7 @@ OWL.framework.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</
                               <span class="dt">name.treatment=</span><span class="st">&quot;intervention&quot;</span>,
                               <span class="dt">names.influencing.treatment=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
                               <span class="dt">names.influencing.rule=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
+                              <span class="dt">propensity.method=</span><span class="st">&quot;logistic.regression&quot;</span>,
                               <span class="dt">bootstrap.CI=</span><span class="ot">FALSE</span>)
 OWL.framework.eval[<span class="kw">c</span>(<span class="st">&quot;n.test.positives&quot;</span>, <span class="st">&quot;n.test.negatives&quot;</span>, <span class="st">&quot;ATE.test.positives&quot;</span>, <span class="st">&quot;ATE.test.negatives&quot;</span>, <span class="st">&quot;ABR&quot;</span>)]
 ## $n.test.positives
@@ -285,17 +272,17 @@ OWL.framework.eval[<span class="kw">c</span>(<span class="st">&quot;n.test.posit
 ## [1] 506
 ## 
 ## $ATE.test.positives
-## [1] 0.03918277
+## [1] 0.0392
 ## 
 ## $ATE.test.negatives
-## [1] -0.1192884
+## [1] -0.119
 ## 
 ## $ABR
-## [1] 0.07160952</code></pre></div>
-<p>We could have also obtain bootstrap-based CIs for the ATE/ABR estimates (in both the validation and evaluation datasets) by specifying the arguments to <code>BuildRulesOnValidation</code> and <code>EvaluateRule()</code></p>
+## [1] 0.0716</code></pre></div>
+<p>We could have also obtained bootstrap-based CIs for the ATE/ABR estimates (in both the validation and evaluation datasets) by specifying the following arguments to <code>BuildRulesOnValidation</code> and <code>EvaluateRule()</code></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">bootstrap.CI=<span class="ot">TRUE</span>
-booststrap.CI.replications=<span class="dv">1000</span></code></pre></div>
-<p>(or for any desired number of replications) but we chose not to compute CIs in this example to minimize run-time.</p>
+booststrap.CI.replications=<span class="dv">1000</span> <span class="co"># or any other number of replications</span></code></pre></div>
+<p>but we chose not to compute CIs in this example to minimize run-time.</p>
 </div>
 
 

@@ -1,19 +1,19 @@
-#' Quickly see the treatment rule implied by \code{BuildRule()}
+#' Get the treatment rule implied by \code{BuildRule()}
 #' 
 #' Map the object returned by \code{BuildRule()} to the treatment rule corresponding to a particular dataset
 #'
 #' @param BuildRule.object The object returned by the \code{BuildRule()} function. 
 #' @param new.X A data frame representing the dataset for which the treatment rule is desired.
-#' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. a 1 for a binary outcome suggests a better outcome clinically than a 0). The \code{prediction.approach} choices \code{OWL.framework} and \code{OWL} in \code{BuildRule()} require a desirable outcome.
+#' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. for a binary outcome, 1 is more desirable than 0). The \code{OWL.framework} and \code{OWL} approaches to treatment rule estimation require a desirable outcome.
 #' @param clinical.threshold A numeric equal a positive number above which the predicted outcome under treatment must be superior to the predicted outcome under control for treatment to be recommended. Only used when \code{BuildRuleObject} was specified and derived from the split-regression or direct-interactions approach. Defaults to 0.
-#' @param return.predicted.response logical indicating whether the predicted response variable (for \code{split.regression}, \code{OWL.framework}, and \code{OWL} approaches) or score function (for \code{direct.interactions}) should be returned in addition to its mapping to a binary treatment recommendation. Default is \code{FALSE}
+#' @param return.predicted.response logical indicating whether the predicted response variable (for \code{split.regression}, \code{OWL.framework}, and \code{OWL} approaches) or score function (for \code{direct.interactions}) should be returned in addition to its mapping to a binary treatment recommendation. Default is \code{FALSE}.
 #' @return
 #' \itemize{
 #' \item If \code{return.predicted.response=FALSE} (the default), then the single object returned is a numeric vector of 0s and 1s, with length equal to the number of rows in \code{new.X}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{new.X}.
 #' \item If \code{return.predicted.response=TRUE}, then the object returned is a list with some combination of the following components (depending on which prediction approach underlies the \code{BuildRule.object}).
 #' \itemize{
 #'   \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{new.X}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{new.X}.
-#'   \item \code{predicted.outcome}: A numeric vector showing the predicted values of the score function corresponding to \code{recommended.treatment}. Only returned if \code{return.predicted.response=TRUE} and the approach underlying \code{BuildRule.object}. was `direct.interactions'.
+#'   \item \code{predicted.outcome}: A numeric vector showing the predicted values of the score function mapped to \code{recommended.treatment}. Only returned if \code{return.predicted.response=TRUE} and the approach underlying \code{BuildRule.object}. was `direct.interactions'.
 #'   \item \code{predicted.outcome.under.control}: A numeric vector showing the predicted values of the outcome under no treatment which, along with \code{predicted.outcome.under.treatment}, corresponds to \code{recommended.treatment}. Only returned if \code{return.predicted.response=TRUE} and the approach underlying \code{BuildRule.object}. was `split.regression'.
 #'   \item \code{predicted.outcome.under.treatment}: A numeric vector showing the predicted values of the outcome under treatment which, along with \code{predicted.outcome.under.control}, corresponds to \code{recommended.treatment}. Only returned if \code{return.predicted.response=TRUE} and the approach underlying \code{BuildRule.object}. was `split.regression'.
 #'   \item \code{predicted.treatment.prob}: A numeric vector showing the predicted treatment probability that corresponds to \code{recommended.treatment}. Only returned if \code{return.predicted.response=TRUE} and the approach underlying \code{BuildRule.object}. was `OWL.framework'.
@@ -21,7 +21,7 @@
 #' }
 #' @examples
 #' set.seed(123)
-#' example.split <- SplitData(data=example_df, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+#' example.split <- SplitData(data=obsStudyGeneExpressions, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 #' development.data <- example.split[example.split$partition == "development",]
 #' validation.data <- example.split[example.split$partition == "validation",]
 #' one.rule <- BuildRule(data=development.data,

@@ -1,30 +1,30 @@
 #' Build a Treatment Rule
 #'
-#' Perform principled development of a treatment rule (using the IPW approach to account for potential confounding) on a development dataset (i.e. on a training set) that is independent of datasets used for model selection (i.e. validation set) and rule evaluation (i.e. test set).
+#' Perform principled development of a treatment rule (using the IPW approach to account for potential confounding) on a development dataset (i.e. training set) that is independent of datasets used for model selection (i.e. validation set) and rule evaluation (i.e. test set).
 #'
-#' @param data A data frame representing the **development** (i.e. training) dataset used for building a treatment rule
-#' @param study.design Either `observational', `RCT', or `naive'. For the \code{observational} design, the function will use inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function will use IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.
-#' @param prediction.approach One of `split-regression', `direct-interactions', `OWL', or `OWL framework'
-#' @param name.outcome A character indicating the name of the outcome variable in \code{data}
-#' @param type.outcome Either `binary' or `continuous', the form of \code{name.outcome}
-#' @param name.treatment A character indicating the name of the treatment variable in \code{data}
-#' @param names.influencing.treatment A character vector (or element) indicating the names of the variables in \code{data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.
-#' @param names.influencing.rule A character vector (or element) indicating the names of the variables in \code{data} that may influence response to treatment and are expected to be observed in future clinical settings
-#' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{data}. This can be used, for example, to account for a non-representative sampling design or an IPW adjustment for missingness. The default is a vector of 1s.
-#' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. a 1 for a binary outcome suggests a better outcome clinically than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome.
+#' @param data A data frame representing the *development* dataset (i.e. training set) used for building a treatment rule.
+#' @param study.design Either `observational', `RCT', or `naive'. For the \code{observational} design, the function uses inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function uses IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.
+#' @param prediction.approach One of `split.regression', `direct.interactions', `OWL', or `OWL.framework'.
+#' @param name.outcome A character indicating the name of the outcome variable in \code{data}.
+#' @param type.outcome Either `binary' or `continuous', the form of \code{name.outcome}.
+#' @param name.treatment A character indicating the name of the treatment variable in \code{data}.
+#' @param names.influencing.treatment A character vector (or single element) indicating the names of the variables in \code{data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.
+#' @param names.influencing.rule A character vector (or single element) indicating the names of the variables in \code{data} that may influence response to treatment and are expected to be observed in future clinical settings.
+#' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. for a binary outcome, a 1 is more desirable than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome.
 #' @param rule.method One of `glm.regression', `lasso', or `ridge'. For \code{type.outcome=}`binary', `glm.regression' leads to logistic regression; for a \code{type.outcome=}`continuous', `glm.regression' specifies linear regression. This is the underlying regression model used to develop the treatment rule.
-#' @param propensity.method One of`logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational'.
-#' @param truncate.propensity.score A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be \code{truncate.propensity.score.threshold} away from 0 or 1.
+#' @param propensity.method One of `logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores for \code{study.design=}`observational'.
+#' @param truncate.propensity.score A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be no more than \code{truncate.propensity.score.threshold} away from 0 or 1.
 #' @param truncate.propensity.score.threshold A numeric value between 0 and 0.25.
-#' @param type.observation.weights Default is NULL, but other choices are `IPW.L', `IPW.L.and.X', and `IPW.ratio', where L indicates the \code{names.influencing.treatment} variables, X indicates the \code{names.influencing.rule} variables. The default behavior is to use the `IPW.ratio' observation weights (propensity score based on X divided by propensity score based on L and X) for \code{prediction.approach=}`split.regression' and to use `IPW.L' observation weights (inverse of propensity score based on L) for the `direct.interactions', `OWL', and `OWL.framework' prediction approaches.
-#' @param propensity.k.cv.folds An integer dictating how many folds to use for K-fold cross-validation that chooses the tuning parameters when \code{propensity.method} is `lasso' or \`ridge'. Default is 10.
-#' @param rule.k.cv.folds An integer dictating how many folds to use for K-fold cross-validation that chooses the tuning parameter lambda when \code{rule.method} is \code{lasso} or \`ridge'. Default is 10.
-#' @param lambda.choice Either `min' or `1se', corresponding to the \code{s} argument in \code{predict.cv.glmnet()} from the \code{glmnet} package; only used when \code{propensity.method} or \code{rule.method} is `lasso' or `ridge'.
-#' @param OWL.lambda.seq Used when \code{prediction.approach=}`OWL', a numeric vector that corresponds to the \code{lambdas} argument in the \code{owl()} function from the \code{DynTxRegime} package.
-#' @param OWL.kernel Used when \code{prediction.approach=}`OWL', a character equal to either `linear' or `radial'. Corresponds to the \code{kernel} argument in the \code{owl()} function from the \code{DynTxRegime} package.
-#' @param OWL.kparam.seq Used when \code{prediction.approach=}`OWL' and \code{OWL.kernel=}`radial'.  Corresponds to the \code{kparam} argument in the \code{owl()} function from the \code{DynTxRegime} package.
-#' @param OWL.cvFolds Used when \code{prediction.approach=}`OWL', an integer corresponding to the \code{cvFolds} argument in the \code{owl()} function from the \code{DynTxRegime} package.
-#' @param OWL.verbose Used when \code{prediction.approach=}`OWL', a logical corresponding to the \code{verbose} argument in the \code{owl()} function from the \code{DynTxRegime} package.
+#' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{data}. This can be used, for example, to account for a non-representative sampling design or to apply an IPW adjustment for missingness. The default is a vector of 1s.
+#' @param type.observation.weights Default is NULL, but other choices are `IPW.L', `IPW.L.and.X', and `IPW.ratio', where L indicates \code{names.influencing.treatment}, X indicates \code{names.influencing.rule}. The default behavior is to use the `IPW.ratio' observation weights (propensity score based on X divided by propensity score based on L and X) for \code{prediction.approach=}`split.regression' and to use `IPW.L' observation weights (inverse of propensity score based on L) for the `direct.interactions', `OWL', and `OWL.framework' prediction approaches.
+#' @param propensity.k.cv.folds An integer specifying how many folds to use for K-fold cross-validation that chooses the tuning parameters when \code{propensity.method} is `lasso' or `ridge'. Default is 10.
+#' @param rule.k.cv.folds An integer specifying how many folds to use for K-fold cross-validation that chooses the tuning parameter when \code{rule.method} is \code{lasso} or `ridge'. Default is 10.
+#' @param lambda.choice Either `min' or `1se', corresponding to the \code{s} argument in \code{predict.cv.glmnet()} from the \code{glmnet} package. Only used when \code{propensity.method} or \code{rule.method} is `lasso' or `ridge'. Default is `min'.
+#' @param OWL.lambda.seq Used when \code{prediction.approach=}`OWL', a numeric vector that corresponds to the \code{lambdas} argument in the \code{owl()} function from the \code{DynTxRegime} package. Defaults to \code{2^seq(-5, 5, 1)}.
+#' @param OWL.kernel Used when \code{prediction.approach=}`OWL', a character equal to either `linear' or `radial'. Corresponds to the \code{kernel} argument in the \code{owl()} function from the \code{DynTxRegime} package. Default is `linear'.
+#' @param OWL.kparam.seq Used when \code{prediction.approach=}`OWL' and \code{OWL.kernel=}`radial'.  Corresponds to the \code{kparam} argument in the \code{owl()} function from the \code{DynTxRegime} package. Defaults to \code{2^seq(-10, 10, 1)}.
+#' @param OWL.cvFolds Used when \code{prediction.approach=}`OWL', an integer corresponding to the \code{cvFolds} argument in the \code{owl()} function from the \code{DynTxRegime} package. Defaults to 10.
+#' @param OWL.verbose Used when \code{prediction.approach=}`OWL', a logical corresponding to the \code{verbose} argument in the \code{owl()} function from the \code{DynTxRegime} package. Defaults to \code{TRUE}.
 #' @param OWL.framework.shift.by.min Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome, OWL framework performs far better in simulation studies when the outcome was shifted to have a minimum of just above 0.
 #' @param direct.interactions.center.continuous.Y Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome, direct-interactions performed far better in simulation studies when the outcome was mean-centered.
 #' @param direct.interactions.exclude.A.from.penalty Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome and lasso/ridge used specified as the \code{rule.method}, direct-interactions performed far better in simulation studies when the coefficient corresponding to the treatment variable was excluded from the penalty function.
@@ -45,7 +45,7 @@
 
 #' @examples
 #' set.seed(123)
-#' example.split <- SplitData(data=example_df, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+#' example.split <- SplitData(data=obsStudyGeneExpressions, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 #' development.data <- example.split[example.split$partition == "development",]
 #' one.rule <- BuildRule(data=development.data,
 #'                      study.design="observational",
@@ -365,7 +365,6 @@ BuildRule <- function(data,
                                                       k.cv.folds=rule.k.cv.folds,
                                                       include.intercept=FALSE,
                                                       exclude.A.from.penalty=direct.interactions.exclude.A.from.penalty)
-            ## can NOT use fitted values from the above call, but i think that's OK. i'll handle them correctly in the PredictRule() function
             return(list("type.outcome"=type.outcome,
                         "propensity.score.object"=propensity.score.object,
                         "observation.weights"=obs.weights,

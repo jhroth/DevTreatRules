@@ -92,12 +92,12 @@ OneDynTxRegime <- function(data.matrix,
                                         OWL.verbose=TRUE) {
     kernel <- match.arg(kernel)
     if (is.null(lambda.seq)) {
-        lambda.seq <- 2 ^ seq(from=-5, to=5, by=1) # from Yingqi; using from -10 to 10 gave me more errors in simulation scenario 
+        lambda.seq <- 2 ^ seq(from=-5, to=5, by=1) 
     }
     if (kernel == "linear") {
         kparam.seq <- NULL
     } else if (is.null(kparam.seq) & kernel == "radial") {
-        kparam.seq <- 2 ^ seq(from=-10, to=10, by=1) # from Yingqi
+        kparam.seq <- 2 ^ seq(from=-10, to=10, by=1)
     } 
     if (DynTxRegime.method == "OWL") {
         if (study.design == "observational") {

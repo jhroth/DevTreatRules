@@ -20,5 +20,5 @@
 #'   \item gene_9: Numeric variable representing the expression level of specific gene_9
 #'   \item gene_10: Numeric variable representing the expression level of specific gene_10
 #' }
-"example_df"
+"obsStudyGeneExpressions"
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/CompareRulesOnValidation.R
 \name{CompareRulesOnValidation}
 \alias{CompareRulesOnValidation}
-\title{Build different treatment rules on a development dataset and evaluate their performances on an independent validation dataset}
+\title{Build treatment rules on a development dataset and evaluate performance on an independent validation dataset}
 \usage{
 CompareRulesOnValidation(development.data, validation.data,
   vec.approaches = c("split.regression", "OWL.framework",
@@ -33,51 +33,51 @@ CompareRulesOnValidation(development.data, validation.data,
   bootstrap.CI.replications = 100)
 }
 \arguments{
-\item{development.data}{A data frame representing the **development** dataset used to build treatment rules}
+\item{development.data}{A data frame representing the *development* dataset used to build treatment rules.}
 
-\item{validation.data}{A data frame representing the independent **validation** dataset used to estimate the performance of treatment rules built on the development dataset}
+\item{validation.data}{A data frame representing the independent *validation* dataset used to estimate the performance of treatment rules built on the development dataset.}
 
-\item{vec.approaches}{A character vector (or element) indicating the values of the \code{prediction.approach} to be used for building the rule with the \code{BuildRule()} function. Default is \code{c(`split.regression', `OWL.framework', `direct.interactions')}.}
+\item{vec.approaches}{A character vector (or element) indicating the values of the \code{prediction.approach} to be used for building the rule with \code{BuildRule()}. Default is \code{c(`split.regression', `OWL.framework', `direct.interactions')}.}
 
-\item{vec.rule.methods}{A character vector (or element) indicating the values of the \code{rule.method} to be used for building the rule with \code{BuildRule()}. Default is \code{c(`glm.regression', `lasso', `ridge')}}
+\item{vec.rule.methods}{A character vector (or element) indicating the values of the \code{rule.method} to be used for building the rule with \code{BuildRule()}. Default is \code{c(`glm.regression', `lasso', `ridge')}.}
 
 \item{vec.propensity.methods}{A character vector (or element) indicating the values of \code{propensity.method} to be used for building the rule with \code{Build.Rule()}. Default is `logistic.regression' to allow for estimation of bootstrap-based CIs.}
 
-\item{study.design.development}{Either `observational', `RCT', or `naive',representing the study design on the development dataset. For the \code{observational} design, the function will use inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function will use IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.}
+\item{study.design.development}{Either `observational', `RCT', or `naive', representing the study design on the development dataset. For the \code{observational} design, the function will use inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function will use IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.}
 
-\item{name.outcome.development}{A character indicating the name of the outcome variable in \code{development.data}}
+\item{name.outcome.development}{A character indicating the name of the outcome variable in \code{development.data}.}
 
-\item{type.outcome.development}{Either `binary' or `continuous', the form of \code{name.outcome.development}}
+\item{type.outcome.development}{Either `binary' or `continuous', the form of \code{name.outcome.development}.}
 
-\item{name.treatment.development}{A character indicating the name of the treatment variable in \code{development.data}}
+\item{name.treatment.development}{A character indicating the name of the treatment variable in \code{development.data}.}
 
-\item{names.influencing.treatment.development}{A character vector (or element) indicating the names of the variables in \code{development.data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'. Note that \code{names.influencing.treatment} differ from its values on the development dataset on which the treatment rule was built.}
+\item{names.influencing.treatment.development}{A character vector (or element) indicating the names of the variables in \code{development.data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design.development=}`observational'.}
 
-\item{names.influencing.rule.development}{A character vector (or element) indicating the names of the variables in \code{development.data} that may influence response to treatment and are expected to be observed in future clinical settings}
+\item{names.influencing.rule.development}{A character vector (or element) indicating the names of the variables in \code{development.data} that may influence response to treatment and are expected to be observed in future clinical settings.}
 
-\item{desirable.outcome.development}{A logical equal to \code{TRUE} if higher values of the outcome on \code{development,data} are considered desirable (e.g. a 1 for a binary outcome suggests a better outcome clinically than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome.}
+\item{desirable.outcome.development}{A logical equal to \code{TRUE} if higher values of the outcome on \code{development,data} are considered desirable (e.g. for a binary outcome, a 1 is more desirable than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome.}
 
 \item{additional.weights.development}{A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{development.data}. This can be used, for example, to account for a non-representative sampling design or an IPW adjustment for missingness. The default is a vector of 1s.}
 
 \item{study.design.validation}{Either `observational', `RCT', or `naive',representing the study design on the development dataset. Default is the value of \code{study.design.development}.}
 
-\item{name.outcome.validation}{A character indicating the name of the outcome variable in \code{validation.data}. Default is the value of \code{name.outcome.development}}
+\item{name.outcome.validation}{A character indicating the name of the outcome variable in \code{validation.data}. Default is the value of \code{name.outcome.development}.}
 
-\item{type.outcome.validation}{Either `binary' or `continuous', the form of \code{name.outcome.validation}. Default is the value of \code{type.outcome.development}}
+\item{type.outcome.validation}{Either `binary' or `continuous', the form of \code{name.outcome.validation}. Default is the value of \code{type.outcome.development}.}
 
 \item{name.treatment.validation}{A character indicating the name of the treatment variable in \code{validation.data}. Default is the value of \code{name.treatment.development}}
 
-\item{names.influencing.treatment.validation}{A character vector (or element) indicating the names of the variables in \code{development.data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'. Note that \code{names.influencing.treatment} differ from its values on the development dataset on which the treatment rule was built. Default is the value of \code{names.influencing.treatment.development}}
+\item{names.influencing.treatment.validation}{A character vector (or element) indicating the names of the variables in \code{validation.data} that are expected to influence treatment assignment in \code{validation.data}. Required for Required for \code{study.design.validation=}`observational'. Default is the value of \code{names.influencing.treatment.development}.}
 
 \item{names.influencing.rule.validation}{A character vector (or element) indicating the names of the variables in \code{validation.data} that may influence response to treatment and are expected to be observed in future clinical settings. Default is the value of \code{names.influencing.rule.development}}
 
-\item{desirable.outcome.validation}{A logical equal to \code{TRUE} if higher values of the outcome on \code{validation,data}  are considered desirable (e.g. a 1 for a binary outcome suggests a better outcome clinically than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome. Default is the value of \code{desirable.outcome.development}}
+\item{desirable.outcome.validation}{A logical equal to \code{TRUE} if higher values of the outcome on \code{validation,data}  are considered desirable (e.g. for a binary outcome, a 1 is more desirable than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome. Default is the value of \code{desirable.outcome.development}}
 
-\item{clinical.threshold.validation}{A numeric equal a positive number above which the predicted outcome under treatment must be superior to the predicted outcome under control for treatment to be recommended. Only used when \code{BuildRuleObject} was specified and derived from the split-regression or direct-interactions approach. Defaults to 0}
+\item{clinical.threshold.validation}{A numeric equal to a positive number above which the predicted outcome under treatment must be superior to the predicted outcome under control for treatment to be recommended. Only used when \code{BuildRuleObject} was specified and derived from the split-regression or direct-interactions approach. Default is 0.}
 
-\item{propensity.method.validation}{One of`logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational' on \code{validation.data}. If \code{bootstrap.CI=TRUE}, then \code{propensity.method} must be `logistic.regression'. Default is `logistic.regression' to allow for estimation of bootstrap-based CIs.}
+\item{propensity.method.validation}{One of `logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational' on \code{validation.data}. If \code{bootstrap.CI=TRUE}, then \code{propensity.method} must be `logistic.regression'. Default is `logistic.regression' to allow for estimation of bootstrap-based CIs.}
 
-\item{additional.weights.validation}{A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{development.data}. This can be used, for example, to account for a non-representative sampling design or an IPW adjustment for missingness. The default is a vector of 1s.}
+\item{additional.weights.validation}{A numeric vector of observation weights that will be multiplied by IPW weights in the rule evaluation stage, with length equal to the number of rows in \code{validation.data}. This can be used, for example, to account for a non-representative sampling design or an IPW adjustment for missingness. The default is a vector of 1s.}
 
 \item{truncate.propensity.score}{A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be \code{truncate.propensity.score.threshold} away from 0 or 1.}
 
@@ -85,21 +85,21 @@ CompareRulesOnValidation(development.data, validation.data,
 
 \item{type.observation.weights}{Default is NULL, but other choices are `IPW.L', `IPW.L.and.X', and `IPW.ratio', where L indicates the \code{names.influencing.treatment} variables, X indicates the \code{names.influencing.rule} variables. The default behavior is to use the `IPW.ratio' observation weights (propensity score based on X divided by propensity score based on L and X) for \code{prediction.approach=}`split.regression' and to use `IPW.L' observation weights (inverse of propensity score based on L) for the `direct.interactions', `OWL', and `OWL.framework' prediction approaches.}
 
-\item{propensity.k.cv.folds}{An integer dictating how many folds to use for K-fold cross-validation that chooses the tuning parameters when \code{propensity.method} is `lasso' or \`ridge'. Default is 10.}
+\item{propensity.k.cv.folds}{An integer specyfing how many folds to use for K-fold cross-validation that chooses the tuning parameter when \code{propensity.method} is `lasso' or `ridge'. Default is 10.}
 
-\item{rule.k.cv.folds}{An integer dictating how many folds to use for K-fold cross-validation that chooses the tuning parameter lambda when \code{rule.method} is \code{lasso} or \`ridge'. Default is 10.}
+\item{rule.k.cv.folds}{An integer specifying how many folds to use for K-fold cross-validation that chooses the tuning parameter when \code{rule.method} is \code{lasso} or `ridge'. Default is 10.}
 
-\item{lambda.choice}{Either `min' or `1se', corresponding to the \code{s} argument in \code{predict.cv.glmnet()} from the \code{glmnet} package; only used when \code{propensity.method} or \code{rule.method} is `lasso' or `ridge'.}
+\item{lambda.choice}{Either `min' or `1se', corresponding to the \code{s} argument in \code{predict.cv.glmnet()} from the \code{glmnet} package. Only used when \code{propensity.method} or \code{rule.method} is `lasso' or `ridge'. Default is `min'.}
 
-\item{OWL.lambda.seq}{Used when \code{prediction.approach=}`OWL', a numeric vector that corresponds to the \code{lambdas} argument in the \code{owl()} function from the \code{DynTxRegime} package.}
+\item{OWL.lambda.seq}{Used when \code{prediction.approach=}`OWL', a numeric vector that corresponds to the \code{lambdas} argument in the \code{owl()} function from the \code{DynTxRegime} package. Defaults to \code{2^seq(-5, 5, 1)}.}
 
-\item{OWL.kernel}{Used when \code{prediction.approach=}`OWL', a character equal to either `linear' or `radial'. Corresponds to the \code{kernel} argument in the \code{owl()} function from the \code{DynTxRegime} package.}
+\item{OWL.kernel}{Used when \code{prediction.approach=}`OWL', a character equal to either `linear' or `radial'. Corresponds to the \code{kernel} argument in the \code{owl()} function from the \code{DynTxRegime} package. Default is `linear'.}
 
-\item{OWL.kparam.seq}{Used when \code{prediction.approach=}`OWL' and \code{OWL.kernel=}`radial'.  Corresponds to the \code{kparam} argument in the \code{owl()} function from the \code{DynTxRegime} package.}
+\item{OWL.kparam.seq}{Used when \code{prediction.approach=}`OWL' and \code{OWL.kernel=}`radial'.  Corresponds to the \code{kparam} argument in the \code{owl()} function from the \code{DynTxRegime} package. Defaults to \code{2^seq(-10, 10, 1)}.}
 
-\item{OWL.cvFolds}{Used when \code{prediction.approach=}`OWL', an integer corresponding to the \code{cvFolds} argument in the \code{owl()} function from the \code{DynTxRegime} package.}
+\item{OWL.cvFolds}{Used when \code{prediction.approach=}`OWL', an integer corresponding to the \code{cvFolds} argument in the \code{owl()} function from the \code{DynTxRegime} package. Defaults to 10.}
 
-\item{OWL.verbose}{Used when \code{prediction.approach=}`OWL', a logical corresponding to the \code{verbose} argument in the \code{owl()} function from the \code{DynTxRegime} package.}
+\item{OWL.verbose}{Used when \code{prediction.approach=}`OWL', a logical corresponding to the \code{verbose} argument in the \code{owl()} function from the \code{DynTxRegime} package. Defaults to \code{TRUE}.}
 
 \item{OWL.framework.shift.by.min}{Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome, OWL framework performs far better in simulation studies when the outcome was shifted to have a minimum of just above 0.}
 
@@ -107,23 +107,23 @@ CompareRulesOnValidation(development.data, validation.data,
 
 \item{direct.interactions.exclude.A.from.penalty}{Logical, set to \code{TRUE} by default in recognition of our empirical observation that, with a continuous outcome and lasso/ridge used specified as the \code{rule.method}, direct-interactions performed far better in simulation studies when the coefficient corresponding to the treatment variable was excluded from the penalty function.}
 
-\item{bootstrap.CI}{Logical indicating whether the ATE/ABR estimates on the validation set should be accompanied by 95\% confidence intervals based on the bootstrap. Default is \code{FALSE}}
+\item{bootstrap.CI}{Logical indicating whether the ATE/ABR estimates on the validation set should be accompanied by 95\% confidence intervals based on the bootstrap. Default is \code{FALSE}.}
 
-\item{bootstrap.CI.replications}{An integer specifying how many bootstrap replications should underlie the computed CIs. Default is 1000}
+\item{bootstrap.CI.replications}{An integer specifying how many bootstrap replications should underlie the computed CIs. Default is 1000.}
 }
 \value{
 A list with components:
 \itemize{
-  \item \code{list.summaries}:A list with number of elements equal to the length of \code{vec.approaches}. Each element is a matrix that, for a given prediction approach, shows estimated rule performance with 5 columns (number of test-positives, number of test-negatives, ATE in test-positives, ATE in test-negatives, ABR) for the different combinations of \code{vec.rule.methods} and \code{vec.propensity.methods} in the rows.
-  \item \code{list.rules}: A list with number elements equal to the length of \code{vec.approaches}. Each element is another list that, for a given prediction approach, stores the object returned by \code{BuildRule()} for the different combinations of \code{vec.rule.methods} and \code{vec.propensity.methods} in the rows.
+  \item \code{list.summaries}: A list with number of elements equal to the length of \code{vec.approaches}. Each element is a matrix that, for a given prediction approach, shows estimated rule performance with 5 columns (number of test-positives, number of test-negatives, ATE in test-positives, ATE in test-negatives, ABR) for the different combinations of \code{vec.rule.methods} and \code{vec.propensity.methods} in the rows.
+  \item \code{list.rules}: A list with number of elements equal to the length of \code{vec.approaches}. Each element is another list that, for a given prediction approach, stores the object returned by \code{BuildRule()} for the different combinations of \code{vec.rule.methods} and \code{vec.propensity.methods} in the rows.
 }
 }
 \description{
-Although the \code{BuildRule()} function can build a treatment rule on a given development dataset, it may not be very useful in practice because it requires one to specify just a single value for the \code{prediction.approach} argument (even though we often do not have *a priori* knowledge about which of split-regression, OWL framework, and direct-interactions approaches will perform best) and to specify just one regression method for the `propensity.score` and `rule.method` arguments (even if we are not sure whether standard GLM or lasso/ridge GLM will yield a better rule). In view of this challenge, it would be more useful to perform model selection to estimate rules for different combinations of split-regression/OWL framework/direct-interactions and standard/lasso/ridge logistic regression (e.g. by looping over calls to `BuildRule()`). The simultaneous building of treatment rules on a development dataset and model selection on an independent validation dataset is automated in `CompareRulesOnValidation()`.
+In many practical settings, \code{BuildRule()} has limited utility because it requires the specification of a single value in its  \code{prediction.approach} argument (even if there is no prior knowledge about which of the split-regression, OWL framework, and direct-interactions approaches will perform best) and a single value for the `propensity.score` and `rule.method` arguments (even if there is no prior knowledge about whether standard or penalized GLM will perform best). \code{CompareRulesOnValidation()} supports model selection in these settings by  essentially looping over calls to \code{BuildRule()} for different combinations of split-regression/OWL framework/direct-interactions and standard/lasso/ridge regression to simultaneously build the rules on a development dataset and evaluate them on an independent validation dataset.
 }
 \examples{
 set.seed(123)
-example.split <- SplitData(data=example_df, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+example.split <- SplitData(data=obsStudyGeneExpressions, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 development.data <- example.split[example.split$partition == "development", ]
 validation.data <- example.split[example.split$partition == "validation", ]
 model.selection <- CompareRulesOnValidation(development.data=development.data,
