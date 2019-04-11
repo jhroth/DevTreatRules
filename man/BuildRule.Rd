@@ -6,7 +6,7 @@
 \usage{
 BuildRule(data, study.design, prediction.approach, name.outcome, type.outcome,
   name.treatment, names.influencing.treatment = NULL, names.influencing.rule,
-  desirable.outcome, rule.method, propensity.method,
+  desirable.outcome, rule.method = NULL, propensity.method,
   additional.weights = rep(1, nrow(data)), truncate.propensity.score = TRUE,
   truncate.propensity.score.threshold = 0.05,
   type.observation.weights = NULL, propensity.k.cv.folds = 10,

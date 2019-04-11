@@ -73,7 +73,7 @@ BuildRule <- function(data,
                       names.influencing.treatment=NULL,
                       names.influencing.rule,
                       desirable.outcome,
-                      rule.method,
+                      rule.method=NULL,
                       propensity.method,
                       additional.weights=rep(1, nrow(data)),
                       truncate.propensity.score=TRUE,
@@ -125,15 +125,23 @@ BuildRule <- function(data,
         stop("the OWL approach assumes that larger values of the outcome variable are better")
     }
     stopifnot((type.outcome %in% c("binary", "continuous")) == TRUE)
-    stopifnot(rule.method %in% c("glm.regression", "lasso", "ridge"))
-    if (type.outcome == "binary" & rule.method == "glm.regression") {
-        rule.method <- "logistic.regression"
-    }
-    if (type.outcome == "continuous" & rule.method == "glm.regression" & (prediction.approach %in% c("split.regression", "direct.interactions"))) {
-        rule.method <- "linear.regression"
-    }
-    if (type.outcome == "continuous" & rule.method == "glm.regression" & (prediction.approach %in% c("OWL", "OWL.framework"))) {
-        rule.method <- "logistic.regression"
+    if (prediction.approach == "OWL") {
+        if (is.null(rule.method) == FALSE) {
+            stop("rule.method argument should be NULL when prediction.approach='OWL'")
+        }
+    } else {
+        if (is.null(rule.method) == TRUE || !(rule.method %in% c("glm.regression", "lasso", "ridge"))) {
+            stop("rule.method must be one of glm.regression, lasso, ridge")
+        }
+        if (type.outcome == "binary" & rule.method == "glm.regression") {
+            rule.method <- "logistic.regression"
+        }
+        if (type.outcome == "continuous" & rule.method == "glm.regression" & (prediction.approach %in% c("split.regression", "direct.interactions"))) {
+            rule.method <- "linear.regression"
+        }
+        if (type.outcome == "continuous" & rule.method == "glm.regression" & (prediction.approach %in% c("OWL", "OWL.framework"))) {
+            rule.method <- "logistic.regression"
+        }
     }
     stopifnot(is.logical(truncate.propensity.score))
     stopifnot(is.numeric(truncate.propensity.score.threshold))

@@ -71,7 +71,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 <p>Here, we illustrate the <code>DevTreatRules</code> package by building and evaluating treatment rules based on the example dataset included with the package.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(obsStudyGeneExpressions)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(DevTreatRules)
+<span class="kw">head</span>(obsStudyGeneExpressions)
 ##   no_relapse intervention prognosis clinic age gene_1 gene_2 gene_3 gene_4
 ## 1          1            0      Good      1  46  0.531  0.071 0.1294  0.427
 ## 2          0            1      Poor      3  51  0.744  0.711 1.3532  1.939
@@ -128,7 +129,7 @@ evaluation.data &lt;-<span class="st">  </span>example.split <span class="op">%&
 <div id="on-the-validation-dataset-perform-model-selection" class="section level2">
 <h2>On the Validation Dataset, Perform Model Selection</h2>
 <p>Here we will perform model selection by calling <code>CompareRulesOnValidation()</code> with the arguments</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">vec.approaches=<span class="kw">c</span>(<span class="st">&quot;split.regression&quot;</span>, <span class="st">&quot;OWL.framework&quot;</span>, <span class="st">&quot;direct.interactions&quot;</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">vec.approaches=<span class="kw">c</span>(<span class="st">&quot;OWL&quot;</span>, <span class="st">&quot;split.regression&quot;</span>, <span class="st">&quot;OWL.framework&quot;</span>, <span class="st">&quot;direct.interactions&quot;</span>)
 vec.rule.methods=<span class="kw">c</span>(<span class="st">&quot;glm.regression&quot;</span>, <span class="st">&quot;lasso&quot;</span>, <span class="st">&quot;ridge&quot;</span>)</code></pre></div>
 <p>which are actually the default values of <code>CompareRulesOnValidation()</code>, and with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">vec.propensity.methods=<span class="st">&quot;logistic.regression&quot;</span></code></pre></div>
