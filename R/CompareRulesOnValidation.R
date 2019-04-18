@@ -112,9 +112,9 @@ CompareRulesOnValidation <- function(development.data,
     for (a in 1:length(vec.approaches)) {
         one.approach <- vec.approaches[a]
         # for storing summaries in matrices
-        mat.summaries <- matrix(NA, nrow=length(vec.rule.methods)*length(vec.propensity.methods), ncol=5)
+        mat.summaries <- matrix(NA, nrow=length(vec.rule.methods)*length(vec.propensity.methods) + 2, ncol=5)
         colnames(mat.summaries) <- c("Positives", "Negatives", "ATE in Positives", "ATE in Negatives", "ABR")
-        rownames(mat.summaries) <- rep(NA, length(vec.rule.methods)*length(vec.propensity.methods))
+        rownames(mat.summaries) <- c(rep(NA, length(vec.rule.methods)*length(vec.propensity.methods)), "treat.all", "treat.none")
         list.rules.one.approach <- vector("list", length(vec.rule.methods)*length(vec.propensity.methods))
         row.number <- 1
         if (one.approach != "OWL") {
@@ -162,6 +162,8 @@ CompareRulesOnValidation <- function(development.data,
                                                  names.influencing.treatment=names.influencing.treatment.validation,
                                                  names.influencing.rule=names.influencing.rule.validation,
                                                  propensity.method=propensity.method.validation,
+                                                 show.treat.all=FALSE,
+                                                 show.treat.none=FALSE,
                                                  additional.weights=additional.weights.validation,
                                                  bootstrap.CI=bootstrap.CI,
                                                  bootstrap.CI.replications=bootstrap.CI.replications)
@@ -169,12 +171,32 @@ CompareRulesOnValidation <- function(development.data,
                     one.rowname <- paste0("propensity_", one.propensity.method, "_rule_", one.rule.method)
                     rownames(mat.summaries)[row.number] <- one.rowname
                     mat.summaries[one.rowname, c("Positives", "Negatives", "ATE in Positives", "ATE in Negatives", "ABR")] <-
-                        as.numeric(evaluate.one[c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")])
+                        as.numeric(evaluate.one$summaries["estimated.rule", c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")])
                     list.rules.one.approach[[row.number]] <- build.one
                     names(list.rules.one.approach)[[row.number]] <- one.rowname
                     row.number <- row.number + 1
                 }
             }
+            evaluate.one.with.naive <- EvaluateRule(data=validation.data,
+                                                    BuildRule.object=build.one,
+                                                    study.design=study.design.validation,
+                                                    name.outcome=name.outcome.validation,
+                                                    type.outcome=type.outcome.validation,
+                                                    desirable.outcome=desirable.outcome.validation,
+                                                    clinical.threshold=clinical.threshold.validation,
+                                                    name.treatment=name.treatment.validation,
+                                                    names.influencing.treatment=names.influencing.treatment.validation,
+                                                    names.influencing.rule=names.influencing.rule.validation,
+                                                    propensity.method=propensity.method.validation,
+                                                    show.treat.all=TRUE,
+                                                    show.treat.none=TRUE,
+                                                    additional.weights=additional.weights.validation,
+                                                    bootstrap.CI=bootstrap.CI,
+                                                    bootstrap.CI.replications=bootstrap.CI.replications)
+            mat.summaries["treat.all", c("Positives", "Negatives", "ATE in Positives", "ATE in Negatives", "ABR")] <-
+                as.numeric(evaluate.one.with.naive$summaries["treat.all", c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")])
+            mat.summaries["treat.none", c("Positives", "Negatives", "ATE in Positives", "ATE in Negatives", "ABR")] <-
+                as.numeric(evaluate.one.with.naive$summaries["treat.none", c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")])
         } else {
             for (p in 1:length(vec.propensity.methods)) {
                 one.propensity.method <- vec.propensity.methods[p]
@@ -218,6 +240,8 @@ CompareRulesOnValidation <- function(development.data,
                                              names.influencing.treatment=names.influencing.treatment.validation,
                                              names.influencing.rule=names.influencing.rule.validation,
                                              propensity.method=propensity.method.validation,
+                                             show.treat.all=FALSE,
+                                             show.treat.none=FALSE,
                                              additional.weights=additional.weights.validation,
                                              bootstrap.CI=bootstrap.CI,
                                              bootstrap.CI.replications=bootstrap.CI.replications)
@@ -225,11 +249,15 @@ CompareRulesOnValidation <- function(development.data,
                 one.rowname <- paste0("propensity_", one.propensity.method)
                 rownames(mat.summaries)[row.number] <- one.rowname
                 mat.summaries[one.rowname, c("Positives", "Negatives", "ATE in Positives", "ATE in Negatives", "ABR")] <-
-                    as.numeric(evaluate.one[c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")])
+                    as.numeric(evaluate.one$summaries["estimated.rule", c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")])
                 list.rules.one.approach[[row.number]] <- build.one
                 names(list.rules.one.approach)[[row.number]] <- one.rowname
                 row.number <- row.number + 1
             }
+            mat.summaries["treat.all", c("Positives", "Negatives", "ATE in Positives", "ATE in Negatives", "ABR")] <-
+                as.numeric(evaluate.one.with.naive$summaries["treat.all", c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")])
+            mat.summaries["treat.none", c("Positives", "Negatives", "ATE in Positives", "ATE in Negatives", "ABR")] <-
+                as.numeric(evaluate.one.with.naive$summaries["treat.none", c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")])
         }
         list.summaries[[a]] <- mat.summaries
         names(list.summaries)[[a]] <- one.approach

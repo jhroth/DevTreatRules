@@ -78,6 +78,8 @@ EvaluateRule <- function(data,
                                   names.influencing.treatment,
                                   names.influencing.rule,
                                   propensity.method=NULL, #"logistic.regression",
+                                  show.treat.all=TRUE,
+                                  show.treat.none=TRUE,
                                   truncate.propensity.score=TRUE,
                                   truncate.propensity.score.threshold=0.05, 
                                   observation.weights=NULL,
@@ -88,6 +90,7 @@ EvaluateRule <- function(data,
                                   bootstrap.CI.replications=1000,
                                   bootstrap.type="basic") {
     lambda.choice <- match.arg(lambda.choice)
+    stopifnot(is.logical(show.treat.all) & is.logical(show.treat.all))
     if (is.null(propensity.method) & is.null(observation.weights)) {
         stop("need to specify either logistic regression for estimating the propensity score, or a vector of observation weights to use instead")
     }
@@ -134,6 +137,19 @@ EvaluateRule <- function(data,
     stopifnot(length(additional.weights) == nrow(data))
     stopifnot(is.numeric(additional.weights))
     stopifnot(is.logical(separate.propensity.estimation))
+    if (show.treat.all == TRUE & show.treat.none == TRUE) {
+        nrow.summaries <- 3
+        rownames.summaries <- c("estimated.rule", "treat.all", "treat.none")
+    } else if (show.treat.all == TRUE & show.treat.none == FALSE) {
+        nrow.summaries <- 2
+        rownames.summaries <- c("estimated.rule", "treat.all")
+    } else if (show.treat.all == FALSE & show.treat.none == TRUE) {
+        nrow.summaries <- 2
+        rownames.summaries <- c("estimated.rule", "treat.none")
+    } else if (show.treat.all == FALSE & show.treat.none == FALSE) {
+        nrow.summaries <- 1
+        rownames.summaries <- c("estimated.rule")
+    }
     n <- nrow(data)
     my.formatted.data <- FormatData(data=data,
                                                    name.outcome=name.outcome,
@@ -159,7 +175,46 @@ EvaluateRule <- function(data,
                                                additional.weights=additional.weights,
                                                lambda.choice=lambda.choice,
                                                propensity.k.cv.folds=propensity.k.cv.folds)
-    
+    if (show.treat.all == TRUE) {
+        do.one.EvaluateRule.treat.all <- EvaluateRuleOnce(data=data,
+                                                          my.formatted.data=my.formatted.data,
+                                                          BuildRule.object=NULL,
+                                                          B=rep(1, nrow(data)),
+                                                          study.design=study.design, 
+                                                          type.outcome=type.outcome,
+                                                          desirable.outcome=desirable.outcome,
+                                                          separate.propensity.estimation=separate.propensity.estimation,
+                                                          clinical.threshold=clinical.threshold,
+                                                          names.influencing.treatment=names.influencing.treatment,
+                                                          names.influencing.rule=names.influencing.rule,
+                                                          propensity.method="logistic.regression",
+                                                          truncate.propensity.score=truncate.propensity.score,
+                                                          truncate.propensity.score.threshold=truncate.propensity.score.threshold,
+                                                          observation.weights=observation.weights,
+                                                          additional.weights=additional.weights,
+                                                          lambda.choice=lambda.choice,
+                                                          propensity.k.cv.folds=propensity.k.cv.folds)
+    }
+    if (show.treat.none == TRUE) {
+        do.one.EvaluateRule.treat.none <- EvaluateRuleOnce(data=data,
+                                                           my.formatted.data=my.formatted.data,
+                                                           BuildRule.object=NULL,
+                                                           B=rep(0, nrow(data)),
+                                                           study.design=study.design, 
+                                                           type.outcome=type.outcome,
+                                                           desirable.outcome=desirable.outcome,
+                                                           separate.propensity.estimation=separate.propensity.estimation,
+                                                           clinical.threshold=clinical.threshold,
+                                                           names.influencing.treatment=names.influencing.treatment,
+                                                           names.influencing.rule=names.influencing.rule,
+                                                           propensity.method="logistic.regression",
+                                                           truncate.propensity.score=truncate.propensity.score,
+                                                           truncate.propensity.score.threshold=truncate.propensity.score.threshold,
+                                                           observation.weights=observation.weights,
+                                                           additional.weights=additional.weights,
+                                                           lambda.choice=lambda.choice,
+                                                           propensity.k.cv.folds=propensity.k.cv.folds)
+    }
     observed.n.test.positives <- do.one.EvaluateRule$n.test.positives
     observed.ATE.test.positives <- do.one.EvaluateRule$ATE.test.positives
     observed.n.test.negatives <- do.one.EvaluateRule$n.test.negatives
@@ -230,6 +285,9 @@ EvaluateRule <- function(data,
         } else {
             stop("only basic bootstrap CI is supported for now")
         }
+        mat.summaries <- matrix(NA, nrow=nrow.summaries, ncol=7)
+        rownames(mat.summaries) <- rownames.summaries
+        colnames(mat.summaries) <- c("n.test.positives", "ATE.test.positives", "bootstrap.CI.ATE.test.positives", "n.test.negatives", "ATE.test.negatives", "bootstrap.CI.ATE.test.negatives", "ABR")
         return(list("recommended.treatment"=do.one.EvaluateRule$recommended.treatment,
                       "vec.mean.ATE.test.positives"=vec.mean.ATE.test.positives,
                       "bootstrap.CI.ATE.test.positives"=basic.bootstrap.CI.ATE.test.positives,
@@ -242,12 +300,36 @@ EvaluateRule <- function(data,
                       "ATE.test.negatives"=observed.ATE.test.negatives,
                       "ABR"=observed.ABR))
     } else {
+        mat.summaries <- matrix(NA, nrow=nrow.summaries, ncol=5)
+        colnames(mat.summaries) <- c("n.test.positives", "ATE.test.positives", "n.test.negatives", "ATE.test.negatives", "ABR")
+        rownames(mat.summaries) <- rownames.summaries
+        mat.summaries["estimated.rule", "n.test.positives"] <- do.one.EvaluateRule$n.test.positives
+        mat.summaries["estimated.rule", "ATE.test.positives"] <- do.one.EvaluateRule$ATE.test.positives
+        mat.summaries["estimated.rule", "n.test.negatives"] <- do.one.EvaluateRule$n.test.negatives
+        mat.summaries["estimated.rule", "ATE.test.negatives"] <- do.one.EvaluateRule$ATE.test.negatives
+        mat.summaries["estimated.rule", "ABR"] <- do.one.EvaluateRule$ABR
+        if (show.treat.all == TRUE) {
+            mat.summaries["treat.all", "n.test.positives"] <- do.one.EvaluateRule.treat.all$n.test.positives
+            mat.summaries["treat.all", "ATE.test.positives"] <- do.one.EvaluateRule.treat.all$ATE.test.positives
+            mat.summaries["treat.all", "n.test.negatives"] <- do.one.EvaluateRule.treat.all$n.test.negatives
+            mat.summaries["treat.all", "ATE.test.negatives"] <- do.one.EvaluateRule.treat.all$ATE.test.negatives
+            mat.summaries["treat.all", "ABR"] <- do.one.EvaluateRule.treat.all$ABR
+        }
+        if (show.treat.none == TRUE) {
+            mat.summaries["treat.none", "n.test.positives"] <- do.one.EvaluateRule.treat.none$n.test.positives
+            mat.summaries["treat.none", "ATE.test.positives"] <- do.one.EvaluateRule.treat.none$ATE.test.positives
+            mat.summaries["treat.none", "n.test.negatives"] <- do.one.EvaluateRule.treat.none$n.test.negatives
+            mat.summaries["treat.none", "ATE.test.negatives"] <- do.one.EvaluateRule.treat.none$ATE.test.negatives
+            mat.summaries["treat.none", "ABR"] <- do.one.EvaluateRule.treat.none$ABR
+        }
         return(list("recommended.treatment"=do.one.EvaluateRule$recommended.treatment,
-                      "fit.object"=do.one.EvaluateRule$fit.object,
-                       "n.test.positives"=observed.n.test.positives,
-                      "ATE.test.positives"=observed.ATE.test.positives,
-                      "n.test.negatives"=observed.n.test.negatives,
-                      "ATE.test.negatives"=observed.ATE.test.negatives,
-                      "ABR"=observed.ABR))
+                       "fit.object"=do.one.EvaluateRule$fit.object,
+                       "summaries"=mat.summaries))
+                      ##  "n.test.positives"=observed.n.test.positives,
+                      ## "ATE.test.positives"=observed.ATE.test.positives,
+                      ## "n.test.negatives"=observed.n.test.negatives,
+                      ## "ATE.test.negatives"=observed.ATE.test.negatives,
+                      ## "ABR"=observed.ABR))
     }
 }
+

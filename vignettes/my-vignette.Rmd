@@ -139,7 +139,8 @@ First, we obtain the estimated performance of the rule using split-regression wi
 ```{r split_on_eval, warning=FALSE}
 set.seed(123)
 split.eval <- EvaluateRule(data=evaluation.data,
-                           BuildRule.object=rule.split,
+                           BuildRule.object=one.rule,
+                           #BuildRule.object=rule.split,
                            study.design="observational",
                            name.outcome="no_relapse",
                            type.outcome="binary",
