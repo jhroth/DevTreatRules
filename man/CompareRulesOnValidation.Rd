@@ -85,7 +85,7 @@ CompareRulesOnValidation(development.data, validation.data,
 
 \item{type.observation.weights}{Default is NULL, but other choices are `IPW.L', `IPW.L.and.X', and `IPW.ratio', where L indicates the \code{names.influencing.treatment} variables, X indicates the \code{names.influencing.rule} variables. The default behavior is to use the `IPW.ratio' observation weights (propensity score based on X divided by propensity score based on L and X) for \code{prediction.approach=}`split.regression' and to use `IPW.L' observation weights (inverse of propensity score based on L) for the `direct.interactions', `OWL', and `OWL.framework' prediction approaches.}
 
-\item{propensity.k.cv.folds}{An integer specyfing how many folds to use for K-fold cross-validation that chooses the tuning parameter when \code{propensity.method} is `lasso' or `ridge'. Default is 10.}
+\item{propensity.k.cv.folds}{An integer specifying how many folds to use for K-fold cross-validation that chooses the tuning parameter when \code{propensity.method} is `lasso' or `ridge'. Default is 10.}
 
 \item{rule.k.cv.folds}{An integer specifying how many folds to use for K-fold cross-validation that chooses the tuning parameter when \code{rule.method} is \code{lasso} or `ridge'. Default is 10.}
 
@@ -114,7 +114,7 @@ CompareRulesOnValidation(development.data, validation.data,
 \value{
 A list with components:
 \itemize{
-  \item \code{list.summaries}: A list with number of elements equal to the length of \code{vec.approaches}. Each element is a matrix that, for a given prediction approach, shows estimated rule performance with 5 columns (number of test-positives, number of test-negatives, ATE in test-positives, ATE in test-negatives, ABR) for the different combinations of \code{vec.rule.methods} and \code{vec.propensity.methods} in the rows.
+  \item \code{list.summaries}: A list with number of elements equal to the length of \code{vec.approaches}. Each element is a matrix that, for a given prediction approach, shows estimated rule performance with 5 columns if \code{bootstrap.CI=FALSE}  (number of test-positives, number of test-negatives, ATE in test-positives, ATE in test-negatives, ABR) for the different combinations of \code{vec.rule.methods} or 9 columns if \code{bootstrap.CI=TRUE} (those same 5 summaries plus the bounds for 95\% CIs for ATE in test-positives and ATE in test-negatives) and, in the rows, the \code{vec.propensity.methods} in addition to the two naive rules (treating all observations and treating no observations).
   \item \code{list.rules}: A list with number of elements equal to the length of \code{vec.approaches}. Each element is another list that, for a given prediction approach, stores the object returned by \code{BuildRule()} for the different combinations of \code{vec.rule.methods} and \code{vec.propensity.methods} in the rows.
 }
 }
@@ -123,7 +123,8 @@ In many practical settings, \code{BuildRule()} has limited utility because it re
 }
 \examples{
 set.seed(123)
-example.split <- SplitData(data=obsStudyGeneExpressions, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+example.split <- SplitData(data=obsStudyGeneExpressions,
+                                    n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 development.data <- example.split[example.split$partition == "development", ]
 validation.data <- example.split[example.split$partition == "validation", ]
 model.selection <- CompareRulesOnValidation(development.data=development.data,

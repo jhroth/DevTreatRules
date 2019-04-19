@@ -8,7 +8,8 @@
 #' @return A data.frame equal to \code{data} with an additional column named `partition', which is a factor variable with levels equal to `development' and `evaluation' (if \code{n.sets=2})  or to  `development', `validation', and `evaluation' (if \code{n.sets=3}).
 #' @examples
 #' set.seed(123)
-#' example.split <- SplitData(data=obsStudyGeneExpressions, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+#' example.split <- SplitData(data=obsStudyGeneExpressions,
+#'                                      n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 #' table(example.split$partition)
 #' @export
 

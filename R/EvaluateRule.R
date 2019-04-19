@@ -15,6 +15,8 @@
 #' @param names.influencing.treatment A character vector (or element) indicating the names of the variables in \code{data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'. 
 #' @param names.influencing.rule A character vector (or element) indicating the names of the variables in \code{data} that may influence response to treatment and are expected to be observed in future clinical settings.
 #' @param propensity.method One of`logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational'. If \code{bootstrap.CI=TRUE}, then \code{propensity.method} must be `logistic.regression'. Defaults to NULL.
+#' @param show.treat.all A logical variable dictating whether summaries for the naive rule that assigns treatment to all observations are reported, which help put the performance of the estimated treatment rule in context. Default is TRUE
+#' @param show.treat.none A logical variable dictating whether summaries for the naive rule that assigns treatment to no observations are reported, which help put the performance of the estimated treatment rule in context. Default is TRUE
 #' @param truncate.propensity.score A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be \code{truncate.propensity.score.threshold} away from 0 or 1.
 #' @param truncate.propensity.score.threshold A numeric value between 0 and 0.25.
 #' @param observation.weights A numeric vector equal to the number of rows in \code{data} that provides observation weights to be used in place of the IPW weights estimated with \code{propensity.method}. Defaults to NULL. Only one of the \code{propensity.method} and \code{observation.weights} should be specified.
@@ -24,19 +26,16 @@
 #' @param bootstrap.CI Logical indicating whether the ATE/ABR estimates returned by \code{EvaluateRule()} should be accompanied by 95\% confidence intervals based on the bootstrap. Default is \code{FALSE}
 #' @param bootstrap.CI.replications An integer specifying how many bootstrap replications should underlie the computed CIs. Default is 1000.
 #' @param bootstrap.type One character element specifying the type of bootstrap CI that should be computed. Currently the only supported option is \code{bootstrap.type=}`basic', but this may be expanded in the future.
-#' @return A list with some combination of the following components (depending on whether \code{bootstrap.CI} is \code{TRUE} or \code{FALSE})
+#' @return A list with the following components
 #' \itemize{
 #'   \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{data}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{data}.
 #'   \item \code{fit.object}: A list consisting of one of the following: the propensity scores estimated in the test-positives and in the test-negatives (if \code{separate.propensity.estimation=TRUE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); the propensity scores estimated in the combined sample (if \code{separate.propensity.estimation=FALSE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); and simply is simply null if \code{study.design=}`RCT' (in which case propensity score would just be the inverse of the sample proportion receiving treatment)
-#' \item \code{n.positives}: Numeric reporting the number of observations in \code{data} recommended to receive treatment.
-#' \item \code{ATE.positives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to receive treatment
-#' \item \code{n.negatives}: Numeric reporting the number of observations in \code{data} recommended to not receive treatment.
-#' \item \code{ATE.negatives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to not receive treatment
-#' \item \code{ABR}: Numeric reporting the estimated average benefit of using the rule (weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives)
+#' \item \code{summaries}: a matrix with columns reporting the following summaries of treatment rule performance: the number of observations in \code{data} recommended to receive treatment. (\code{n.positives}); the estimated average treatment effect among those recommended to receive treatment (\code{ATE.positives}); the number of observations in \code{data} recommended to not receive treatment (\code{n.negatives}); the estimated average treatment effect among those recommended to not receive treatment (\code{ATE.negatives}); the estimated average benefit of using the rule, with the weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives (\code{ABR}). If \code{bootstrap.CI=TRUE}, then 4 additional columns are included, showing the lower bound (LB) and upper bound (UB) of the 95\% CIs for \code{ATE.positives} and \code{ATE.negatives}.
 #' }
 #' @examples
 #' set.seed(123)
-#' example.split <- SplitData(data=obsStudyGeneExpressions, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+#' example.split <- SplitData(data=obsStudyGeneExpressions,
+#'                                      n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 #' development.data <- example.split[example.split$partition == "development",]
 #' validation.data <- example.split[example.split$partition == "validation",]
 #' one.rule <- BuildRule(data=development.data,

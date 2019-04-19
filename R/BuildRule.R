@@ -45,7 +45,8 @@
 
 #' @examples
 #' set.seed(123)
-#' example.split <- SplitData(data=obsStudyGeneExpressions, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+#' example.split <- SplitData(data=obsStudyGeneExpressions,
+#'                                      n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 #' development.data <- example.split[example.split$partition == "development",]
 #' one.rule <- BuildRule(data=development.data,
 #'                      study.design="observational",

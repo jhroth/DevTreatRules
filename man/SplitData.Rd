@@ -21,6 +21,7 @@ To get a trustworthy estimate of how a developed treatment rule will perform in 
 }
 \examples{
 set.seed(123)
-example.split <- SplitData(data=obsStudyGeneExpressions, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+example.split <- SplitData(data=obsStudyGeneExpressions,
+                                     n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 table(example.split$partition)
 }

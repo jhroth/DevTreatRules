@@ -42,6 +42,10 @@ EvaluateRule(data, BuildRule.object = NULL, B = NULL, study.design,
 
 \item{propensity.method}{One of`logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational'. If \code{bootstrap.CI=TRUE}, then \code{propensity.method} must be `logistic.regression'. Defaults to NULL.}
 
+\item{show.treat.all}{A logical variable dictating whether summaries for the naive rule that assigns treatment to all observations are reported, which help put the performance of the estimated treatment rule in context. Default is TRUE}
+
+\item{show.treat.none}{A logical variable dictating whether summaries for the naive rule that assigns treatment to no observations are reported, which help put the performance of the estimated treatment rule in context. Default is TRUE}
+
 \item{truncate.propensity.score}{A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be \code{truncate.propensity.score.threshold} away from 0 or 1.}
 
 \item{truncate.propensity.score.threshold}{A numeric value between 0 and 0.25.}
@@ -61,15 +65,11 @@ EvaluateRule(data, BuildRule.object = NULL, B = NULL, study.design,
 \item{bootstrap.type}{One character element specifying the type of bootstrap CI that should be computed. Currently the only supported option is \code{bootstrap.type=}`basic', but this may be expanded in the future.}
 }
 \value{
-A list with some combination of the following components (depending on whether \code{bootstrap.CI} is \code{TRUE} or \code{FALSE})
+A list with the following components
 \itemize{
   \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{data}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{data}.
   \item \code{fit.object}: A list consisting of one of the following: the propensity scores estimated in the test-positives and in the test-negatives (if \code{separate.propensity.estimation=TRUE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); the propensity scores estimated in the combined sample (if \code{separate.propensity.estimation=FALSE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); and simply is simply null if \code{study.design=}`RCT' (in which case propensity score would just be the inverse of the sample proportion receiving treatment)
-\item \code{n.positives}: Numeric reporting the number of observations in \code{data} recommended to receive treatment.
-\item \code{ATE.positives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to receive treatment
-\item \code{n.negatives}: Numeric reporting the number of observations in \code{data} recommended to not receive treatment.
-\item \code{ATE.negatives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to not receive treatment
-\item \code{ABR}: Numeric reporting the estimated average benefit of using the rule (weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives)
+\item \code{summaries}: a matrix with columns reporting the following summaries of treatment rule performance: the number of observations in \code{data} recommended to receive treatment. (\code{n.positives}); the estimated average treatment effect among those recommended to receive treatment (\code{ATE.positives}); the number of observations in \code{data} recommended to not receive treatment (\code{n.negatives}); the estimated average treatment effect among those recommended to not receive treatment (\code{ATE.negatives}); the estimated average benefit of using the rule, with the weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives (\code{ABR}). If \code{bootstrap.CI=TRUE}, then 4 additional columns are included, showing the lower bound (LB) and upper bound (UB) of the 95\% CIs for \code{ATE.positives} and \code{ATE.negatives}.
 }
 }
 \description{
@@ -77,7 +77,8 @@ Perform principled evaluation of a treatment rule (using the IPW approach to acc
 }
 \examples{
 set.seed(123)
-example.split <- SplitData(data=obsStudyGeneExpressions, n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
+example.split <- SplitData(data=obsStudyGeneExpressions,
+                                     n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 development.data <- example.split[example.split$partition == "development",]
 validation.data <- example.split[example.split$partition == "validation",]
 one.rule <- BuildRule(data=development.data,
