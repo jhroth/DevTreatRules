@@ -95,7 +95,7 @@ model.selection <- CompareRulesOnValidation(development.data=development.data,
                 names.influencing.rule.development=c("age", paste0("gene_", 1:10)),
                 desirable.outcome.development=TRUE)
 ```
-We can compare these estimates for the nine treatment rules (three approaches, three combinations of rule/propensity methods) to decide which rules to bring forward to the evaluation dataset.
+We can compare these estimates for the nine treatment rules (three approaches, three combinations of rule/propensity methods) to decide which rules to bring forward to the evaluation dataset. For context, the estimates for the naive "treat.all" and "treat.none" strategies are always provided by `CompareRulesOnValidation()`.
 
 First, for rules estimated with the split-regression approach, we obtain the estimates
 ```{r look_at_validation_split, size="footnotesize"}
@@ -139,8 +139,7 @@ First, we obtain the estimated performance of the rule using split-regression wi
 ```{r split_on_eval, warning=FALSE}
 set.seed(123)
 split.eval <- EvaluateRule(data=evaluation.data,
-                           BuildRule.object=one.rule,
-                           #BuildRule.object=rule.split,
+                           BuildRule.object=rule.split,
                            study.design="observational",
                            name.outcome="no_relapse",
                            type.outcome="binary",
@@ -149,8 +148,10 @@ split.eval <- EvaluateRule(data=evaluation.data,
                            names.influencing.treatment=c("prognosis", "clinic", "age"),
                            names.influencing.rule=c("age", paste0("gene_", 1:10)),
                            propensity.method="logistic.regression",
+                           show.treat.all=TRUE,
+                           show.treat.none=TRUE,
                            bootstrap.CI=FALSE)
-split.eval[c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")]
+split.eval$summaries
 ```
 Next, the rule from OWL framework yields the following estimates
 ```{r OWL_on_eval, warning=FALSE}
@@ -165,8 +166,10 @@ OWL.framework.eval <- EvaluateRule(data=evaluation.data,
                               names.influencing.treatment=c("prognosis", "clinic", "age"),
                               names.influencing.rule=c("age", paste0("gene_", 1:10)),
                               propensity.method="logistic.regression",
+                              show.treat.all=TRUE,
+                              show.treat.none=TRUE,
                               bootstrap.CI=FALSE)
-OWL.framework.eval[c("n.test.positives", "n.test.negatives", "ATE.test.positives", "ATE.test.negatives", "ABR")]
+OWL.framework.eval$summaries
 ```
 We could have also obtained bootstrap-based CIs for the ATE/ABR estimates (in both the validation and evaluation datasets) by specifying the following arguments to `BuildRulesOnValidation` and `EvaluateRule()`
 ```{r}

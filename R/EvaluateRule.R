@@ -28,11 +28,11 @@
 #' \itemize{
 #'   \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{data}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{data}.
 #'   \item \code{fit.object}: A list consisting of one of the following: the propensity scores estimated in the test-positives and in the test-negatives (if \code{separate.propensity.estimation=TRUE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); the propensity scores estimated in the combined sample (if \code{separate.propensity.estimation=FALSE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); and simply is simply null if \code{study.design=}`RCT' (in which case propensity score would just be the inverse of the sample proportion receiving treatment)
-#' \item \code{n.test.positives}: Numeric reporting the number of observations in \code{data} recommended to receive treatment.
-#' \item \code{ATE.test.positives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to receive treatment
-#' \item \code{n.test.negatives}: Numeric reporting the number of observations in \code{data} recommended to not receive treatment.
-#' \item \code{ATE.test.negatives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to not receive treatment
-#' \item \code{ABR}: Numeric reporting the estimated average benefit of using the rule (weighted average of ATE.test.positives and -1 * ATE.test.negatives where weights are the proportions of test-positives and test-negatives)
+#' \item \code{n.positives}: Numeric reporting the number of observations in \code{data} recommended to receive treatment.
+#' \item \code{ATE.positives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to receive treatment
+#' \item \code{n.negatives}: Numeric reporting the number of observations in \code{data} recommended to not receive treatment.
+#' \item \code{ATE.negatives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to not receive treatment
+#' \item \code{ABR}: Numeric reporting the estimated average benefit of using the rule (weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives)
 #' }
 #' @examples
 #' set.seed(123)
@@ -61,8 +61,8 @@
 #'                           names.influencing.rule=c("age", paste0("gene_", 1:10)),
 #'                           propensity.method="logistic.regression",
 #'                           bootstrap.CI=FALSE)
-#' split.validation[c("n.test.positives", "n.test.negatives",
-#'                        "ATE.test.positives", "ATE.test.negatives", "ABR")]
+#' split.validation[c("n.positives", "n.negatives",
+#'                        "ATE.positives", "ATE.negatives", "ABR")]
 #' @export
 
 EvaluateRule <- function(data,
@@ -215,16 +215,16 @@ EvaluateRule <- function(data,
                                                            lambda.choice=lambda.choice,
                                                            propensity.k.cv.folds=propensity.k.cv.folds)
     }
-    observed.n.test.positives <- do.one.EvaluateRule$n.test.positives
-    observed.ATE.test.positives <- do.one.EvaluateRule$ATE.test.positives
-    observed.n.test.negatives <- do.one.EvaluateRule$n.test.negatives
-    observed.ATE.test.negatives <- do.one.EvaluateRule$ATE.test.negatives
+    observed.n.positives <- do.one.EvaluateRule$n.positives
+    observed.ATE.positives <- do.one.EvaluateRule$ATE.positives
+    observed.n.negatives <- do.one.EvaluateRule$n.negatives
+    observed.ATE.negatives <- do.one.EvaluateRule$ATE.negatives
     observed.ABR <- do.one.EvaluateRule$ABR
     if (bootstrap.CI == TRUE) {
-        vec.n.test.positives <- rep(NA, bootstrap.CI.replications)
-        vec.mean.ATE.test.positives <- rep(NA, bootstrap.CI.replications)
-        vec.n.test.negatives <- rep(NA, bootstrap.CI.replications)
-        vec.mean.ATE.test.negatives <- rep(NA, bootstrap.CI.replications)
+        vec.n.positives <- rep(NA, bootstrap.CI.replications)
+        vec.mean.ATE.positives <- rep(NA, bootstrap.CI.replications)
+        vec.n.negatives <- rep(NA, bootstrap.CI.replications)
+        vec.mean.ATE.negatives <- rep(NA, bootstrap.CI.replications)
         vec.mean.ABR <- rep(NA, bootstrap.CI.replications)
         for (b in 1:bootstrap.CI.replications) {
             idx.boot <- sample(1:n, size=n, replace=TRUE)
@@ -257,78 +257,113 @@ EvaluateRule <- function(data,
                                                             propensity.k.cv.folds=propensity.k.cv.folds,
                                                             truncate.propensity.score=truncate.propensity.score,
                                                             truncate.propensity.score.threshold=truncate.propensity.score.threshold)
-            vec.n.test.positives[b] <- do.one.EvaluateRule.boot$n.test.positives
-            vec.mean.ATE.test.positives[b] <- do.one.EvaluateRule.boot$ATE.test.positives
-            vec.n.test.negatives[b] <- do.one.EvaluateRule.boot$n.test.negatives
-            vec.mean.ATE.test.negatives[b] <- do.one.EvaluateRule.boot$ATE.test.negatives
+            vec.n.positives[b] <- do.one.EvaluateRule.boot$n.positives
+            vec.mean.ATE.positives[b] <- do.one.EvaluateRule.boot$ATE.positives
+            vec.n.negatives[b] <- do.one.EvaluateRule.boot$n.negatives
+            vec.mean.ATE.negatives[b] <- do.one.EvaluateRule.boot$ATE.negatives
             vec.mean.ABR[b] <- do.one.EvaluateRule.boot$ABR
         }
         if (bootstrap.type == "basic") {
-            if (observed.n.test.positives > 0) {
-                basic.bootstrap.CI.ATE.test.positives <- c(2 * observed.ATE.test.positives - quantile(vec.mean.ATE.test.positives, probs=0.975),
-                                                                          2 * observed.ATE.test.positives - quantile(vec.mean.ATE.test.positives, probs=0.025))
-                names(basic.bootstrap.CI.ATE.test.positives) <- c("2.5%", "97.5%")
+            if (observed.n.positives > 0) {
+                basic.bootstrap.CI.ATE.positives <- c(2 * observed.ATE.positives - quantile(vec.mean.ATE.positives, probs=0.975),
+                                                                          2 * observed.ATE.positives - quantile(vec.mean.ATE.positives, probs=0.025))
+                names(basic.bootstrap.CI.ATE.positives) <- c("2.5%", "97.5%")
             } else {
-                basic.bootstrap.CI.ATE.test.positives <- c(NA, NA)
+                basic.bootstrap.CI.ATE.positives <- c(NA, NA)
             }
-            if (observed.n.test.negatives > 0) {
-                basic.bootstrap.CI.ATE.test.negatives <- c(2 * observed.ATE.test.negatives - quantile(vec.mean.ATE.test.negatives, probs=0.975),
-                                                                          2 * observed.ATE.test.negatives - quantile(vec.mean.ATE.test.negatives, probs=0.025))
-                names(basic.bootstrap.CI.ATE.test.negatives) <- c("2.5%", "97.5%")
+            if (observed.n.negatives > 0) {
+                basic.bootstrap.CI.ATE.negatives <- c(2 * observed.ATE.negatives - quantile(vec.mean.ATE.negatives, probs=0.975),
+                                                                          2 * observed.ATE.negatives - quantile(vec.mean.ATE.negatives, probs=0.025))
+                names(basic.bootstrap.CI.ATE.negatives) <- c("2.5%", "97.5%")
             } else {
-                basic.bootstrap.CI.ATE.test.negatives <- c(NA, NA)
+                basic.bootstrap.CI.ATE.negatives <- c(NA, NA)
             }
             basic.bootstrap.CI.ABR <- c(2 * observed.ABR - quantile(vec.mean.ABR, probs=0.975),
                                                                           2 * observed.ABR - quantile(vec.mean.ABR, probs=0.025))
             names(basic.bootstrap.CI.ABR) <- c("2.5%", "97.5%")
-            vec.mean.ABR
         } else {
             stop("only basic bootstrap CI is supported for now")
         }
-        mat.summaries <- matrix(NA, nrow=nrow.summaries, ncol=7)
+        mat.summaries <- matrix(NA, nrow=nrow.summaries, ncol=9)
         rownames(mat.summaries) <- rownames.summaries
-        colnames(mat.summaries) <- c("n.test.positives", "ATE.test.positives", "bootstrap.CI.ATE.test.positives", "n.test.negatives", "ATE.test.negatives", "bootstrap.CI.ATE.test.negatives", "ABR")
-        return(list("recommended.treatment"=do.one.EvaluateRule$recommended.treatment,
-                      "vec.mean.ATE.test.positives"=vec.mean.ATE.test.positives,
-                      "bootstrap.CI.ATE.test.positives"=basic.bootstrap.CI.ATE.test.positives,
-                      "vec.mean.ATE.test.negatives"=vec.mean.ATE.test.negatives,
-                      "bootstrap.CI.ATE.test.negatives"=basic.bootstrap.CI.ATE.test.negatives,
-                      "bootstrap.CI.ABR"=basic.bootstrap.CI.ABR,
-                      "n.test.positives"=observed.n.test.positives,
-                      "ATE.test.positives"=observed.ATE.test.positives,
-                      "n.test.negatives"=observed.n.test.negatives,
-                      "ATE.test.negatives"=observed.ATE.test.negatives,
-                      "ABR"=observed.ABR))
-    } else {
-        mat.summaries <- matrix(NA, nrow=nrow.summaries, ncol=5)
-        colnames(mat.summaries) <- c("n.test.positives", "ATE.test.positives", "n.test.negatives", "ATE.test.negatives", "ABR")
-        rownames(mat.summaries) <- rownames.summaries
-        mat.summaries["estimated.rule", "n.test.positives"] <- do.one.EvaluateRule$n.test.positives
-        mat.summaries["estimated.rule", "ATE.test.positives"] <- do.one.EvaluateRule$ATE.test.positives
-        mat.summaries["estimated.rule", "n.test.negatives"] <- do.one.EvaluateRule$n.test.negatives
-        mat.summaries["estimated.rule", "ATE.test.negatives"] <- do.one.EvaluateRule$ATE.test.negatives
+        colnames(mat.summaries) <- c("n.positives", "ATE.positives", "ATE.positives.CI.LB", "ATE.positives.CI.UB", 
+                                                    "n.negatives", "ATE.negatives", "ATE.negatives.CI.LB", "ATE.negatives.CI.UB", 
+                                                    "ABR")
+        mat.summaries["estimated.rule", "n.positives"] <- do.one.EvaluateRule$n.positives
+        mat.summaries["estimated.rule", "ATE.positives"] <- do.one.EvaluateRule$ATE.positives
+        mat.summaries["estimated.rule", "ATE.positives.CI.LB"] <- basic.bootstrap.CI.ATE.positives[1]
+        mat.summaries["estimated.rule", "ATE.positives.CI.UB"] <- basic.bootstrap.CI.ATE.positives[2]
+        mat.summaries["estimated.rule", "n.negatives"] <- do.one.EvaluateRule$n.negatives
+        mat.summaries["estimated.rule", "ATE.negatives"] <- do.one.EvaluateRule$ATE.negatives
+        mat.summaries["estimated.rule", "ATE.negatives.CI.LB"] <- basic.bootstrap.CI.ATE.negatives[1]
+        mat.summaries["estimated.rule", "ATE.negatives.CI.UB"] <- basic.bootstrap.CI.ATE.negatives[2]
         mat.summaries["estimated.rule", "ABR"] <- do.one.EvaluateRule$ABR
+        
         if (show.treat.all == TRUE) {
-            mat.summaries["treat.all", "n.test.positives"] <- do.one.EvaluateRule.treat.all$n.test.positives
-            mat.summaries["treat.all", "ATE.test.positives"] <- do.one.EvaluateRule.treat.all$ATE.test.positives
-            mat.summaries["treat.all", "n.test.negatives"] <- do.one.EvaluateRule.treat.all$n.test.negatives
-            mat.summaries["treat.all", "ATE.test.negatives"] <- do.one.EvaluateRule.treat.all$ATE.test.negatives
+            mat.summaries["treat.all", "n.positives"] <- do.one.EvaluateRule.treat.all$n.positives
+            mat.summaries["treat.all", "ATE.positives"] <- do.one.EvaluateRule.treat.all$ATE.positives
+            mat.summaries["treat.all", "ATE.positives.CI.LB"] <- NA
+            mat.summaries["treat.all", "ATE.positives.CI.UB"] <- NA
+            mat.summaries["treat.all", "n.negatives"] <- do.one.EvaluateRule.treat.all$n.negatives
+            mat.summaries["treat.all", "ATE.negatives"] <- do.one.EvaluateRule.treat.all$ATE.negatives
+            mat.summaries["treat.all", "ATE.negatives.CI.LB"] <- NA
+            mat.summaries["treat.all", "ATE.negatives.CI.UB"] <- NA
             mat.summaries["treat.all", "ABR"] <- do.one.EvaluateRule.treat.all$ABR
         }
         if (show.treat.none == TRUE) {
-            mat.summaries["treat.none", "n.test.positives"] <- do.one.EvaluateRule.treat.none$n.test.positives
-            mat.summaries["treat.none", "ATE.test.positives"] <- do.one.EvaluateRule.treat.none$ATE.test.positives
-            mat.summaries["treat.none", "n.test.negatives"] <- do.one.EvaluateRule.treat.none$n.test.negatives
-            mat.summaries["treat.none", "ATE.test.negatives"] <- do.one.EvaluateRule.treat.none$ATE.test.negatives
+            mat.summaries["treat.none", "n.positives"] <- do.one.EvaluateRule.treat.none$n.positives
+            mat.summaries["treat.none", "ATE.positives"] <- do.one.EvaluateRule.treat.none$ATE.positives
+            mat.summaries["treat.none", "ATE.positives.CI.LB"] <- NA
+            mat.summaries["treat.none", "ATE.positives.CI.UB"] <- NA
+            mat.summaries["treat.none", "n.negatives"] <- do.one.EvaluateRule.treat.none$n.negatives
+            mat.summaries["treat.none", "ATE.negatives"] <- do.one.EvaluateRule.treat.none$ATE.negatives
+            mat.summaries["treat.none", "ATE.negatives.CI.LB"] <- NA
+            mat.summaries["treat.none", "ATE.negatives.CI.UB"] <- NA
+            mat.summaries["treat.none", "ABR"] <- do.one.EvaluateRule.treat.none$ABR
+        }
+        return(list("recommended.treatment"=do.one.EvaluateRule$recommended.treatment,
+                      "fit.object"=do.one.EvaluateRule$fit.object,
+                       "summaries"=mat.summaries))
+                       ## "bootstrap.CI.ATE.positives"=basic.bootstrap.CI.ATE.positives,
+                       ## "bootstrap.CI.ATE.negatives"=basic.bootstrap.CI.ATE.negatives,
+                       ## "bootstrap.CI.ABR"=basic.bootstrap.CI.ABR))
+                      ## "vec.mean.ATE.positives"=vec.mean.ATE.positives,
+                      ## "vec.mean.ATE.negatives"=vec.mean.ATE.negatives,
+                      ##                       "n.positives"=observed.n.positives,
+                      ## "ATE.positives"=observed.ATE.positives,
+                      ## "n.negatives"=observed.n.negatives,
+                      ## "ATE.negatives"=observed.ATE.negatives,
+                      ## "ABR"=observed.ABR))
+    } else {
+        mat.summaries <- matrix(NA, nrow=nrow.summaries, ncol=5)
+        colnames(mat.summaries) <- c("n.positives", "ATE.positives", "n.negatives", "ATE.negatives", "ABR")
+        rownames(mat.summaries) <- rownames.summaries
+        mat.summaries["estimated.rule", "n.positives"] <- do.one.EvaluateRule$n.positives
+        mat.summaries["estimated.rule", "ATE.positives"] <- do.one.EvaluateRule$ATE.positives
+        mat.summaries["estimated.rule", "n.negatives"] <- do.one.EvaluateRule$n.negatives
+        mat.summaries["estimated.rule", "ATE.negatives"] <- do.one.EvaluateRule$ATE.negatives
+        mat.summaries["estimated.rule", "ABR"] <- do.one.EvaluateRule$ABR
+        if (show.treat.all == TRUE) {
+            mat.summaries["treat.all", "n.positives"] <- do.one.EvaluateRule.treat.all$n.positives
+            mat.summaries["treat.all", "ATE.positives"] <- do.one.EvaluateRule.treat.all$ATE.positives
+            mat.summaries["treat.all", "n.negatives"] <- do.one.EvaluateRule.treat.all$n.negatives
+            mat.summaries["treat.all", "ATE.negatives"] <- do.one.EvaluateRule.treat.all$ATE.negatives
+            mat.summaries["treat.all", "ABR"] <- do.one.EvaluateRule.treat.all$ABR
+        }
+        if (show.treat.none == TRUE) {
+            mat.summaries["treat.none", "n.positives"] <- do.one.EvaluateRule.treat.none$n.positives
+            mat.summaries["treat.none", "ATE.positives"] <- do.one.EvaluateRule.treat.none$ATE.positives
+            mat.summaries["treat.none", "n.negatives"] <- do.one.EvaluateRule.treat.none$n.negatives
+            mat.summaries["treat.none", "ATE.negatives"] <- do.one.EvaluateRule.treat.none$ATE.negatives
             mat.summaries["treat.none", "ABR"] <- do.one.EvaluateRule.treat.none$ABR
         }
         return(list("recommended.treatment"=do.one.EvaluateRule$recommended.treatment,
                        "fit.object"=do.one.EvaluateRule$fit.object,
                        "summaries"=mat.summaries))
-                      ##  "n.test.positives"=observed.n.test.positives,
-                      ## "ATE.test.positives"=observed.ATE.test.positives,
-                      ## "n.test.negatives"=observed.n.test.negatives,
-                      ## "ATE.test.negatives"=observed.ATE.test.negatives,
+                      ##  "n.positives"=observed.n.positives,
+                      ## "ATE.positives"=observed.ATE.positives,
+                      ## "n.negatives"=observed.n.negatives,
+                      ## "ATE.negatives"=observed.ATE.negatives,
                       ## "ABR"=observed.ABR))
     }
 }

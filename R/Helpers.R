@@ -9,15 +9,15 @@ NamesToGlmFormula <- function(name.response, names.features, include.intercept) 
     return(result)
 }
 
-ComputeABR <- function(n.test.positives, ATE.test.positives,
-                                     n.test.negatives, ATE.test.negatives) {
-    if (n.test.positives == 0) {
-        result <- -1 * ATE.test.negatives
-    } else if (n.test.negatives == 0) {
-        result <- ATE.test.positives
+ComputeABR <- function(n.positives, ATE.positives,
+                                     n.negatives, ATE.negatives) {
+    if (n.positives == 0) {
+        result <- -1 * ATE.negatives
+    } else if (n.negatives == 0) {
+        result <- ATE.positives
     } else {
-        result <- (n.test.positives / (n.test.positives + n.test.negatives)) * ATE.test.positives +
-                    (n.test.negatives / (n.test.positives + n.test.negatives)) * (-1 * ATE.test.negatives)
+        result <- (n.positives / (n.positives + n.negatives)) * ATE.positives +
+                    (n.negatives / (n.positives + n.negatives)) * (-1 * ATE.negatives)
     }
     return(result)
 }
@@ -399,44 +399,44 @@ EvaluateRuleOnce <- function(data,
                           return.predicted.response=FALSE)
     }
     idx.test.positives <- B==1
-    n.test.positives <- sum(idx.test.positives)
+    n.positives <- sum(idx.test.positives)
     idx.test.negatives <- B==0
-    n.test.negatives <- sum(idx.test.negatives)
+    n.negatives <- sum(idx.test.negatives)
     if (is.null(observation.weights) == TRUE) {
         if (study.design == "observational") {
             p.for.propensity <- ncol(my.formatted.data$df.model.matrix.L)
-            if (p.for.propensity > n.test.positives & separate.propensity.estimation == TRUE) {
+            if (p.for.propensity > n.positives & separate.propensity.estimation == TRUE) {
                 if ((propensity.method %in% c("logistic.regression", "linear.regression")) & separate.propensity.estimation == TRUE) {
-                    warning("Within the test-positives subset, there are fewer observations than predictors in the propensity score model. Since the specified propensity.method does not perform variable selection, the separate.propensity.estimation argument has been changed to FALSE to estimate propensity score in the pooled sample of test-positives and test-negatives")
+                    #warning("Within the test-positives subset, there are fewer observations than predictors in the propensity score model. Since the specified propensity.method does not perform variable selection, the separate.propensity.estimation argument has been changed to FALSE to estimate propensity score in the pooled sample of test-positives and test-negatives")
                     separate.propensity.estimation <- FALSE
                 } else if ((propensity.method %in% c("lasso", "ridge")) & separate.propensity.estimation == TRUE) {
-                    warning("Within the test-positives subset, there are fewer observations than predictors in the propensity score model. The specified propensity.method does perform variable selection so estimation may still be possible, but if this is unexpected it may be better to set separate.propensity.estimation=FALSE to perform this estimation in the pooled sample of test-positives and test-negatives.")
+                    #warning("Within the test-positives subset, there are fewer observations than predictors in the propensity score model. The specified propensity.method does perform variable selection so estimation may still be possible, but if this is unexpected it may be better to set separate.propensity.estimation=FALSE to perform this estimation in the pooled sample of test-positives and test-negatives.")
                 }
             }
-            if (p.for.propensity > n.test.negatives & separate.propensity.estimation == TRUE) {
+            if (p.for.propensity > n.negatives & separate.propensity.estimation == TRUE) {
                 if ((propensity.method %in% c("logistic.regression", "linear.regression")) & separate.propensity.estimation == TRUE) {
-                    warning("Within the test-negatives subset, there are fewer observations than predictors in the propensity score model. Since the specified propensity.method does not perform variable selection, the separate.propensity.estimation argument has been changed to FALSE to estimate propensity score in the pooled sample of test-negatives and test-negatives")
+                    #warning("Within the test-negatives subset, there are fewer observations than predictors in the propensity score model. Since the specified propensity.method does not perform variable selection, the separate.propensity.estimation argument has been changed to FALSE to estimate propensity score in the pooled sample of test-negatives and test-negatives")
                     separate.propensity.estimation <- FALSE
                 } else if ((propensity.method %in% c("lasso", "ridge")) & separate.propensity.estimation == TRUE) {
-                    warning("Within the test-negatives subset, there are fewer observations than predictors in the propensity score model. The specified propensity.method does perform variable selection so estimation is still possible, but if this is unexpected it may be better to set separate.propensity.estimation=FALSE to perform this estimation in the pooled sample of test-negatives and test-negatives.")
+                    #warning("Within the test-negatives subset, there are fewer observations than predictors in the propensity score model. The specified propensity.method does perform variable selection so estimation is still possible, but if this is unexpected it may be better to set separate.propensity.estimation=FALSE to perform this estimation in the pooled sample of test-negatives and test-negatives.")
                 }
             }
-            n.test.positives.treatment <- sum(my.formatted.data$df.model.matrix.all[idx.test.positives, "treatment"] == 1)
-            n.test.positives.control <- sum(my.formatted.data$df.model.matrix.all[idx.test.positives, "treatment"] == 0)
-            n.test.negatives.treatment <- sum(my.formatted.data$df.model.matrix.all[idx.test.negatives, "treatment"] == 1)
-            n.test.negatives.control <- sum(my.formatted.data$df.model.matrix.all[idx.test.negatives, "treatment"] == 0)
-            if (n.test.positives.treatment < 2 | n.test.positives.control < 2 | n.test.negatives.treatment < 2 | n.test.negatives.control <= 2) {
+            n.positives.treatment <- sum(my.formatted.data$df.model.matrix.all[idx.test.positives, "treatment"] == 1)
+            n.positives.control <- sum(my.formatted.data$df.model.matrix.all[idx.test.positives, "treatment"] == 0)
+            n.negatives.treatment <- sum(my.formatted.data$df.model.matrix.all[idx.test.negatives, "treatment"] == 1)
+            n.negatives.control <- sum(my.formatted.data$df.model.matrix.all[idx.test.negatives, "treatment"] == 0)
+            if (n.positives.treatment < 2 | n.positives.control < 2 | n.negatives.treatment < 2 | n.negatives.control <= 2) {
                 separate.propensity.estimation <- FALSE
-                if (n.test.positives.treatment < 2) {
+                if (n.positives.treatment < 2) {
                     paste("there were fewer than two test-positive observations in the treatment group, so the separate.propensity.estimation argument has been changed to FALSE to estimate propensity score in the pooled sample of test-positives and test-negatives")
                 }
-                if (n.test.positives.control < 2) {
+                if (n.positives.control < 2) {
                     paste("there were fewer than two test-positive observations in the control group, so the separate.propensity.estimation argument has been changed to FALSE to estimate propensity score in the pooled sample of test-positives and test-negatives")
                 }
-                if (n.test.negatives.treatment < 2) {
+                if (n.negatives.treatment < 2) {
                     paste("there were fewer than two test-negative observations in the treatment group, so the separate.propensity.estimation argument has been changed to FALSE to estimate propensity score in the pooled sample of test-positives and test-negatives")
                 }
-                if (n.test.negatives.control < 2) {
+                if (n.negatives.control < 2) {
                     paste("there were fewer than two test-negative observations in the control group, so the separate.propensity.estimation argument has been changed to FALSE to estimate propensity score in the pooled sample of test-positives and test-negatives")
                 }
             }
@@ -447,7 +447,7 @@ EvaluateRuleOnce <- function(data,
                                                                           name.response="fac.treatment",
                                                                           type.response="binary",
                                                                           names.features=names(my.formatted.data$df.model.matrix.L),
-                                                                          observation.weights=rep(1, n.test.positives),
+                                                                          observation.weights=rep(1, n.positives),
                                                                           method=propensity.method,
                                                                           lambda.choice=lambda.choice,
                                                                           k.cv.folds=propensity.k.cv.folds,
@@ -464,7 +464,7 @@ EvaluateRuleOnce <- function(data,
                                                                           name.response="fac.treatment",
                                                                           type.response="binary",
                                                                           names.features=names(my.formatted.data$df.model.matrix.L),
-                                                                          observation.weights=rep(1, n.test.negatives),
+                                                                          observation.weights=rep(1, n.negatives),
                                                                           method=propensity.method,
                                                                           lambda.choice=lambda.choice,
                                                                           k.cv.folds=propensity.k.cv.folds,
@@ -519,25 +519,25 @@ EvaluateRuleOnce <- function(data,
     }
     ## ATE among test positives and test negatives (OWL always assumes higher values of the outcoem variable are better)
     weighted.outcome <- obs.weights * data.df[, "outcome"]
-    if (n.test.positives > 0) {
-        ATE.test.positives <- sum(weighted.outcome[B==1 & data.df[, "treatment"] == 1]) / n.test.positives -
-                                      sum(weighted.outcome[B==1 & data.df[, "treatment"] == 0]) / n.test.positives
+    if (n.positives > 0) {
+        ATE.positives <- sum(weighted.outcome[B==1 & data.df[, "treatment"] == 1]) / n.positives -
+                                      sum(weighted.outcome[B==1 & data.df[, "treatment"] == 0]) / n.positives
     } else {
-        ATE.test.positives <- NA
+        ATE.positives <- NA
     }
-    if (n.test.negatives > 0) {
-        ATE.test.negatives <- sum(weighted.outcome[B==0 & data.df[, "treatment"] == 1]) / n.test.negatives -
-                                       sum(weighted.outcome[B==0 & data.df[, "treatment"] == 0]) / n.test.negatives
+    if (n.negatives > 0) {
+        ATE.negatives <- sum(weighted.outcome[B==0 & data.df[, "treatment"] == 1]) / n.negatives -
+                                       sum(weighted.outcome[B==0 & data.df[, "treatment"] == 0]) / n.negatives
     } else {
-        ATE.test.negatives <- NA
+        ATE.negatives <- NA
     }
-    ABR <- ComputeABR(n.test.positives=n.test.positives, ATE.test.positives=ATE.test.positives,
-                                   n.test.negatives=n.test.negatives, ATE.test.negatives=ATE.test.negatives)
+    ABR <- ComputeABR(n.positives=n.positives, ATE.positives=ATE.positives,
+                                   n.negatives=n.negatives, ATE.negatives=ATE.negatives)
     return(list("fit.object"=fit.object,
                  "recommended.treatment"=B,
                 "ABR"=ABR,
-                "n.test.positives"=n.test.positives,
-                "ATE.test.positives"=ATE.test.positives,
-                "n.test.negatives"=n.test.negatives,
-                "ATE.test.negatives"=ATE.test.negatives))
+                "n.positives"=n.positives,
+                "ATE.positives"=ATE.positives,
+                "n.negatives"=n.negatives,
+                "ATE.negatives"=ATE.negatives))
 }

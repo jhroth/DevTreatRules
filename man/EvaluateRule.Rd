@@ -65,11 +65,11 @@ A list with some combination of the following components (depending on whether \
 \itemize{
   \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{data}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{data}.
   \item \code{fit.object}: A list consisting of one of the following: the propensity scores estimated in the test-positives and in the test-negatives (if \code{separate.propensity.estimation=TRUE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); the propensity scores estimated in the combined sample (if \code{separate.propensity.estimation=FALSE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); and simply is simply null if \code{study.design=}`RCT' (in which case propensity score would just be the inverse of the sample proportion receiving treatment)
-\item \code{n.test.positives}: Numeric reporting the number of observations in \code{data} recommended to receive treatment.
-\item \code{ATE.test.positives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to receive treatment
-\item \code{n.test.negatives}: Numeric reporting the number of observations in \code{data} recommended to not receive treatment.
-\item \code{ATE.test.negatives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to not receive treatment
-\item \code{ABR}: Numeric reporting the estimated average benefit of using the rule (weighted average of ATE.test.positives and -1 * ATE.test.negatives where weights are the proportions of test-positives and test-negatives)
+\item \code{n.positives}: Numeric reporting the number of observations in \code{data} recommended to receive treatment.
+\item \code{ATE.positives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to receive treatment
+\item \code{n.negatives}: Numeric reporting the number of observations in \code{data} recommended to not receive treatment.
+\item \code{ATE.negatives}: Numeric reporting the estimated average treatment effect (ATE) among those recommended to not receive treatment
+\item \code{ABR}: Numeric reporting the estimated average benefit of using the rule (weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives)
 }
 }
 \description{
@@ -102,6 +102,6 @@ split.validation <- EvaluateRule(data=validation.data,
                           names.influencing.rule=c("age", paste0("gene_", 1:10)),
                           propensity.method="logistic.regression",
                           bootstrap.CI=FALSE)
-split.validation[c("n.test.positives", "n.test.negatives",
-                       "ATE.test.positives", "ATE.test.negatives", "ABR")]
+split.validation[c("n.positives", "n.negatives",
+                       "ATE.positives", "ATE.negatives", "ABR")]
 }

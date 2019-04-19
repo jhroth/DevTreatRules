@@ -62,7 +62,7 @@ PredictRule <- function(BuildRule.object,
         recommended.treatment <- rep(NA, nrow(df.model.matrix.new.X))
         recommended.treatment[one.result == -1] <- 0
         recommended.treatment[one.result == 1] <- 1
-        warning("the OWL approach assumes that larger values of the outcome variable are better")
+        #warning("the OWL approach assumes that larger values of the outcome variable are better")
     } else if (prediction.approach %in% c("split.regression", "direct.interactions")) {
         if (is.null(desirable.outcome)) {
             stop("desirable.outcome needs to be specified when using split.regression or direct.interactions approach")
@@ -125,7 +125,7 @@ PredictRule <- function(BuildRule.object,
         } else {
             stop("if more methods are added I'll need to handle predicted values appropriately")
         }
-        warning("the OWL approach assumes that larger values of the outcome variable are better")
+        #warning("the OWL.framework approach assumes that larger values of the outcome variable are better")
     } else {
         stop("prediction approach needs to be one of split.regression, OWL, OWL.framework, and interactions.approach")
     }
