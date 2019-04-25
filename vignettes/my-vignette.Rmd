@@ -109,15 +109,15 @@ and, last, for the direct-interactions approach
 ```{r look_at_validation_DI, size="footnotesize"}
 model.selection$list.summaries[["direct.interactions"]] 
 ```
-Based on the above estimates in the validation set, we decide to select two rules to bring forward to the evaluation set: split-regression with logistic/logistic as the propensity/rule methods 
+Based on the above estimates in the validation set, we decide to select two rules to bring forward to the evaluation set: (1) split-regression with logistic/logistic as the propensity/rule methods 
 
 ```{r selected_split_on_validation}
 model.selection$list.summaries$split.regression["propensity_logistic.regression_rule_glm.regression", ]
 ```
 
-and OWL framework with logistic/logistic as the propensity/rule methods
-```{r selected_OWL_on_validation}
-model.selection$list.summaries$OWL.framework["propensity_logistic.regression_rule_glm.regression", ]
+and (2) direct-interactions with logistic/lasso as the propensity/rule methods
+```{r selected_DI_on_validation}
+model.selection$list.summaries$direct.interactions["propensity_logistic.regression_rule_lasso", ]
 ```
 
 We can also see the underlying coefficient estimates for these rules with
@@ -127,9 +127,9 @@ coef(rule.split$rule.object.control)
 coef(rule.split$rule.object.treat)
 ```
 
-```{r rule_OWL}
-rule.OWL <- model.selection$list.rules$OWL.framework[["propensity_logistic.regression_rule_glm.regression"]]
-coef(rule.OWL$rule.object)
+```{r rule_DI}
+rule.DI <- model.selection$list.rules$direct.interactions[["propensity_logistic.regression_rule_lasso"]]
+coef(rule.DI$rule.object)
 ```
 
 ## On the Evaluation Dataset, Evaluate the Selected Rules
@@ -154,10 +154,10 @@ split.eval <- EvaluateRule(data=evaluation.data,
 split.eval$summaries
 ```
 Next, the rule from OWL framework yields the following estimates
-```{r OWL_on_eval, warning=FALSE}
+```{r DIL_on_eval, warning=FALSE}
 set.seed(123)
-OWL.framework.eval <- EvaluateRule(data=evaluation.data,
-                              BuildRule.object=rule.OWL,
+DI.eval <- EvaluateRule(data=evaluation.data,
+                              BuildRule.object=rule.DI,
                               study.design="observational",
                               name.outcome="no_relapse",
                               type.outcome="binary",
@@ -169,7 +169,7 @@ OWL.framework.eval <- EvaluateRule(data=evaluation.data,
                               show.treat.all=TRUE,
                               show.treat.none=TRUE,
                               bootstrap.CI=FALSE)
-OWL.framework.eval$summaries
+DI.eval$summaries
 ```
 We could have also obtained bootstrap-based CIs for the ATE/ABR estimates (in both the validation and evaluation datasets) by specifying the following arguments to `BuildRulesOnValidation` and `EvaluateRule()`
 ```{r}

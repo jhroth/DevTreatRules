@@ -107,13 +107,15 @@ BuildRule <- function(data,
         }
     }
     if (is.null(type.observation.weights) & study.design == "observational" & (prediction.approach %in% c("OWL", "OWL.framework"))) {
-        type.observation.weights <- "IPW.L"
+        #type.observation.weights <- "IPW.L"
+        type.observation.weights <- "IPW.L.and.X"
     }
     if (is.null(type.observation.weights) & study.design == "observational" & (prediction.approach %in% c("split.regression"))) {
         type.observation.weights <- "IPW.ratio"
     }
     if (is.null(type.observation.weights) & prediction.approach %in% c("direct.interactions")) {
-        type.observation.weights <- "IPW.L"
+        #type.observation.weights <- "IPW.L"
+        type.observation.weights <- "IPW.L.and.X"
     }
     lambda.choice <- match.arg(lambda.choice)
     if (min(data[, name.outcome], na.rm=TRUE) < 0 & prediction.approach %in% c("OWL", "OWL.framework")) {
@@ -222,6 +224,19 @@ BuildRule <- function(data,
             obs.weights <- additional.weights * obs.weights
             propensity.score.object <- list(propensity.score.X.object, propensity.score.L.and.X.object)
         } else if (type.observation.weights == "IPW.L.and.X") {
+        # Predict P(T=1 | L, X)
+        propensity.score.L.and.X.object <- DoPrediction(data.matrix=data.matrix.for.propensity.score,
+                                                         data.df=data.df.for.propensity.score,
+                                                         name.response=response.for.propensity.score,
+                                                         type.response="binary",
+                                                         names.features=names(my.formatted.data$df.model.matrix.L.and.X),
+                                                         observation.weights=rep(1, n),
+                                                         method=propensity.method,
+                                                         lambda.choice=lambda.choice,
+                                                         k.cv.folds=propensity.k.cv.folds,
+                                                         include.intercept=TRUE)
+            propensity.score.L.and.X.probability <- TruncateProbability(probability=propensity.score.L.and.X.object$one.fit.predicted.probability,
+                                                                                        threshold=truncate.propensity.score.threshold)
             obs.weights <- rep(NA, n)
             obs.weights[idx.treatment] <- (1 / propensity.score.L.and.X.probability)[idx.treatment]
             obs.weights[idx.control] <- (1 / (1 - propensity.score.L.and.X.probability))[idx.control]
