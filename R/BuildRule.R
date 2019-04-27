@@ -114,7 +114,6 @@ BuildRule <- function(data,
         type.observation.weights <- "IPW.ratio"
     }
     if (is.null(type.observation.weights) & prediction.approach %in% c("direct.interactions")) {
-        #type.observation.weights <- "IPW.L"
         type.observation.weights <- "IPW.L.and.X"
     }
     lambda.choice <- match.arg(lambda.choice)
@@ -168,9 +167,12 @@ BuildRule <- function(data,
     idx.treatment <- which(my.formatted.data$df.model.matrix.all[, "treatment"] == 1)
     if (study.design == "observational") {
         if (prediction.approach %in% c("direct.interactions")) {
-            response.for.propensity.score <- "fac.treatment.neg.pos"
-            data.matrix.for.propensity.score <- my.formatted.data$model.matrix.all.times.A
-            data.df.for.propensity.score <- my.formatted.data$df.model.matrix.all.times.A
+            ## response.for.propensity.score <- "fac.treatment.neg.pos"
+            ## data.matrix.for.propensity.score <- my.formatted.data$model.matrix.X.times.A.plus.AY
+            ## data.df.for.propensity.score <- my.formatted.data$df.model.matrix.X.times.A.plus.AY
+            response.for.propensity.score <- "fac.treatment"
+            data.matrix.for.propensity.score <- my.formatted.data$model.matrix.all
+            data.df.for.propensity.score <- my.formatted.data$df.model.matrix.all
         } else if (prediction.approach %in% c("OWL", "OWL.framework", "split.regression")) {
             response.for.propensity.score <- "fac.treatment"
             data.matrix.for.propensity.score <- my.formatted.data$model.matrix.all
@@ -225,7 +227,7 @@ BuildRule <- function(data,
             propensity.score.object <- list(propensity.score.X.object, propensity.score.L.and.X.object)
         } else if (type.observation.weights == "IPW.L.and.X") {
         # Predict P(T=1 | L, X)
-        propensity.score.L.and.X.object <- DoPrediction(data.matrix=data.matrix.for.propensity.score,
+            propensity.score.L.and.X.object <- DoPrediction(data.matrix=data.matrix.for.propensity.score,
                                                          data.df=data.df.for.propensity.score,
                                                          name.response=response.for.propensity.score,
                                                          type.response="binary",
@@ -235,6 +237,16 @@ BuildRule <- function(data,
                                                          lambda.choice=lambda.choice,
                                                          k.cv.folds=propensity.k.cv.folds,
                                                          include.intercept=TRUE)
+        ## propensity.score.L.and.X.object <- DoPrediction(data.matrix=data.matrix.for.propensity.score,
+        ##                                                  data.df=data.df.for.propensity.score,
+        ##                                                  name.response=response.for.propensity.score,
+        ##                                                  type.response="binary",
+        ##                                                  names.features=names(my.formatted.data$df.model.matrix.L.and.X),
+        ##                                                  observation.weights=rep(1, n),
+        ##                                                  method=propensity.method,
+        ##                                                  lambda.choice=lambda.choice,
+        ##                                                  k.cv.folds=propensity.k.cv.folds,
+        ##                                                  include.intercept=TRUE)
             propensity.score.L.and.X.probability <- TruncateProbability(probability=propensity.score.L.and.X.object$one.fit.predicted.probability,
                                                                                         threshold=truncate.propensity.score.threshold)
             obs.weights <- rep(NA, n)
@@ -378,23 +390,25 @@ BuildRule <- function(data,
                     name.outcome.for.interactions.approach <- "outcome"
                 }
             }
-            predict.Y.with.X.times.A <- DoPrediction(data.matrix=my.formatted.data$model.matrix.all.times.A,
-                                                      data.df=my.formatted.data$df.model.matrix.all.times.A,
+            predict.Y.with.X.times.A <- DoPrediction(data.matrix=my.formatted.data$model.matrix.X.times.A,
+                                                      data.df=my.formatted.data$df.model.matrix.X.times.A.plus.AY,
                                                       name.response=name.outcome.for.interactions.approach,
                                                       type.response=type.outcome,
-                                                      names.features=names(my.formatted.data$df.model.matrix.X.times.A), # already includes "treatment.neg.pos, which was handled in FormatData()
+                                                      names.features=colnames(my.formatted.data$model.matrix.X.times.A), # already includes "treatment.neg.pos, which was handled in FormatData()
                                                       observation.weights=obs.weights,
                                                       method=rule.method,
                                                       lambda.choice=lambda.choice,
                                                       k.cv.folds=rule.k.cv.folds,
                                                       include.intercept=FALSE,
                                                       exclude.A.from.penalty=direct.interactions.exclude.A.from.penalty)
+            #print(coef(predict.Y.with.X.times.A$one.fit))
             return(list("type.outcome"=type.outcome,
                         "propensity.score.object"=propensity.score.object,
                         "observation.weights"=obs.weights,
                         "prediction.approach"=prediction.approach,
                         "rule.method"=rule.method,
                         "lambda.choice"=lambda.choice,
-                        "rule.object"=predict.Y.with.X.times.A$one.fit))
+                        "rule.object"=predict.Y.with.X.times.A$one.fit,
+                        "predict.Y.with.X.times.A"=predict.Y.with.X.times.A))
         }
 }

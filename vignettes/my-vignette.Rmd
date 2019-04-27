@@ -148,8 +148,6 @@ split.eval <- EvaluateRule(data=evaluation.data,
                            names.influencing.treatment=c("prognosis", "clinic", "age"),
                            names.influencing.rule=c("age", paste0("gene_", 1:10)),
                            propensity.method="logistic.regression",
-                           show.treat.all=TRUE,
-                           show.treat.none=TRUE,
                            bootstrap.CI=FALSE)
 split.eval$summaries
 ```
@@ -166,8 +164,6 @@ DI.eval <- EvaluateRule(data=evaluation.data,
                               names.influencing.treatment=c("prognosis", "clinic", "age"),
                               names.influencing.rule=c("age", paste0("gene_", 1:10)),
                               propensity.method="logistic.regression",
-                              show.treat.all=TRUE,
-                              show.treat.none=TRUE,
                               bootstrap.CI=FALSE)
 DI.eval$summaries
 ```

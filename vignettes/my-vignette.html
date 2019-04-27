@@ -203,27 +203,27 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
 <p>and, last, for the direct-interactions approach </p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries[[<span class="st">&quot;direct.interactions&quot;</span>]] 
 ##                                                    Positives Negatives
-## propensity_logistic.regression_rule_glm.regression       620       630
-## propensity_logistic.regression_rule_lasso                608       642
-## propensity_logistic.regression_rule_ridge                592       658
+## propensity_logistic.regression_rule_glm.regression       784       466
+## propensity_logistic.regression_rule_lasso                852       398
+## propensity_logistic.regression_rule_ridge               1250         0
 ## treat.all                                               1250         0
 ## treat.none                                                 0      1250
 ##                                                    ATE in Positives
-## propensity_logistic.regression_rule_glm.regression           0.1377
-## propensity_logistic.regression_rule_lasso                    0.1597
-## propensity_logistic.regression_rule_ridge                    0.1477
+## propensity_logistic.regression_rule_glm.regression           0.0973
+## propensity_logistic.regression_rule_lasso                    0.1056
+## propensity_logistic.regression_rule_ridge                    0.0383
 ## treat.all                                                    0.0383
 ## treat.none                                                       NA
 ##                                                    ATE in Negatives
-## propensity_logistic.regression_rule_glm.regression          -0.1231
-## propensity_logistic.regression_rule_lasso                   -0.1107
-## propensity_logistic.regression_rule_ridge                   -0.1185
+## propensity_logistic.regression_rule_glm.regression          -0.0866
+## propensity_logistic.regression_rule_lasso                   -0.1833
+## propensity_logistic.regression_rule_ridge                        NA
 ## treat.all                                                        NA
 ## treat.none                                                   0.0383
 ##                                                        ABR
-## propensity_logistic.regression_rule_glm.regression  0.1303
-## propensity_logistic.regression_rule_lasso           0.1345
-## propensity_logistic.regression_rule_ridge           0.1323
+## propensity_logistic.regression_rule_glm.regression  0.0933
+## propensity_logistic.regression_rule_lasso           0.1304
+## propensity_logistic.regression_rule_ridge           0.0383
 ## treat.all                                           0.0383
 ## treat.none                                         -0.0383</code></pre></div>
 <p>Based on the above estimates in the validation set, we decide to select two rules to bring forward to the evaluation set: (1) split-regression with logistic/logistic as the propensity/rule methods</p>
@@ -235,9 +235,9 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
 <p>and (2) direct-interactions with logistic/lasso as the propensity/rule methods</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model.selection<span class="op">$</span>list.summaries<span class="op">$</span>direct.interactions[<span class="st">&quot;propensity_logistic.regression_rule_lasso&quot;</span>, ]
 ##        Positives        Negatives ATE in Positives ATE in Negatives 
-##          608.000          642.000            0.160           -0.111 
+##          852.000          398.000            0.106           -0.183 
 ##              ABR 
-##            0.135</code></pre></div>
+##            0.130</code></pre></div>
 <p>We can also see the underlying coefficient estimates for these rules with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rule.split &lt;-<span class="st"> </span>model.selection<span class="op">$</span>list.rules<span class="op">$</span>split.regression[[<span class="st">&quot;propensity_logistic.regression_rule_glm.regression&quot;</span>]]
 <span class="kw">coef</span>(rule.split<span class="op">$</span>rule.object.control)
@@ -253,19 +253,19 @@ model.selection &lt;-<span class="st"> </span><span class="kw">CompareRulesOnVal
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rule.DI &lt;-<span class="st"> </span>model.selection<span class="op">$</span>list.rules<span class="op">$</span>direct.interactions[[<span class="st">&quot;propensity_logistic.regression_rule_lasso&quot;</span>]]
 <span class="kw">coef</span>(rule.DI<span class="op">$</span>rule.object)
 ## 13 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
-##                          1
-## (Intercept)        .      
-## treatment.neg.pos -0.32690
-## age                0.00435
-## gene_1             0.06835
-## gene_2             .      
-## gene_3             .      
-## gene_4             .      
-## gene_5             .      
-## gene_6             .      
-## gene_7             .      
-## gene_8             .      
-## gene_9             .      
+##                         1
+## (Intercept)        .     
+## treatment.neg.pos -0.0413
+## age                .     
+## gene_1             0.1277
+## gene_2             .     
+## gene_3             .     
+## gene_4             .     
+## gene_5             .     
+## gene_6             .     
+## gene_7             .     
+## gene_8             .     
+## gene_9             .     
 ## gene_10            .</code></pre></div>
 </div>
 <div id="on-the-evaluation-dataset-evaluate-the-selected-rules" class="section level2">
@@ -283,8 +283,6 @@ split.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</span>(<s
                            <span class="dt">names.influencing.treatment=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
                            <span class="dt">names.influencing.rule=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
                            <span class="dt">propensity.method=</span><span class="st">&quot;logistic.regression&quot;</span>,
-                           <span class="dt">show.treat.all=</span><span class="ot">TRUE</span>,
-                           <span class="dt">show.treat.none=</span><span class="ot">TRUE</span>,
                            <span class="dt">bootstrap.CI=</span><span class="ot">FALSE</span>)
 split.eval<span class="op">$</span>summaries
 ##                n.positives ATE.positives n.negatives ATE.negatives     ABR
@@ -303,12 +301,10 @@ DI.eval &lt;-<span class="st"> </span><span class="kw">EvaluateRule</span>(<span
                               <span class="dt">names.influencing.treatment=</span><span class="kw">c</span>(<span class="st">&quot;prognosis&quot;</span>, <span class="st">&quot;clinic&quot;</span>, <span class="st">&quot;age&quot;</span>),
                               <span class="dt">names.influencing.rule=</span><span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="kw">paste0</span>(<span class="st">&quot;gene_&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)),
                               <span class="dt">propensity.method=</span><span class="st">&quot;logistic.regression&quot;</span>,
-                              <span class="dt">show.treat.all=</span><span class="ot">TRUE</span>,
-                              <span class="dt">show.treat.none=</span><span class="ot">TRUE</span>,
                               <span class="dt">bootstrap.CI=</span><span class="ot">FALSE</span>)
 DI.eval<span class="op">$</span>summaries
 ##                n.positives ATE.positives n.negatives ATE.negatives     ABR
-## estimated.rule         591        0.0942         659       -0.1273  0.1116
+## estimated.rule         820        0.0326         430       -0.1563  0.0752
 ## treat.all             1250       -0.0256           0            NA -0.0256
 ## treat.none               0            NA        1250       -0.0256  0.0256</code></pre></div>
 <p>We could have also obtained bootstrap-based CIs for the ATE/ABR estimates (in both the validation and evaluation datasets) by specifying the following arguments to <code>BuildRulesOnValidation</code> and <code>EvaluateRule()</code></p>

@@ -246,15 +246,19 @@ DoPrediction <- function(data.matrix,
         }
         df.with.weights <- data.frame(data.df,
                                            "observation.weights"=observation.weights)
+        #print(summary(df.with.weights))
+        #print(my.glm.formula)
         one.fit <- glm(my.glm.formula,
                             family="quasibinomial", 
                             data=df.with.weights,
                             weights=observation.weights)
+        #print(coef(one.fit))
         one.fit.predicted.probability <- as.numeric(predict(one.fit, type="response"))
         one.fit.predicted.class <- as.numeric(one.fit.predicted.probability >= 0.5)
         return(list("one.fit"=one.fit,
                       "one.fit.predicted.probability"=one.fit.predicted.probability,
                       "one.fit.predicted.class"=one.fit.predicted.class))
+#                       "df.with.weights"=df.with.weights))
     } else if (method == "linear.regression") {
         if (type.response == "binary") {
             warning("linear regression was used for a binary response variable")
@@ -306,15 +310,20 @@ FormatData <- function(data,
     # Create model matrix objects
     ## L (variables influencing treatment)
     model.matrix.L <- model.matrix(as.formula(paste("~", names.influencing.treatment, collapse="+", sep=" ")), data=data)
+    #print("orig names of model.matrix.L:")
+    #print(names(model.matrix.L))
     if (ncol(model.matrix.L) == 2) {
+        #names.model.matrix.L <- model.matrix.L
         model.matrix.L <- as.matrix(model.matrix.L[, -1, drop=FALSE]) 
-        colnames(model.matrix.L) <- names.influencing.treatment
+        #colnames(model.matrix.L) <- names.model.matrix.L[2]
     } else {
         model.matrix.L <- model.matrix.L[, -1, drop=FALSE]
     }
     df.model.matrix.L <- as.data.frame(model.matrix.L)
     ## X (variables influencing rule)
     model.matrix.X <- model.matrix(as.formula(paste("~", names.influencing.rule, collapse="+", sep=" ")), data=data)
+    #print("orig names of model.matrix.X:")
+    #print(names(model.matrix.X))
     if (ncol(model.matrix.X) == 2) {
         model.matrix.X <- as.matrix(model.matrix.X[, -1, drop=FALSE]) 
         colnames(model.matrix.X) <- names.influencing.rule
@@ -340,22 +349,34 @@ FormatData <- function(data,
                                                        df.model.matrix.L.and.X)
     }
     model.matrix.X.times.A <- cbind(treatment.neg.pos, model.matrix.X * treatment.neg.pos)
-    model.matrix.all.times.A <- cbind(model.matrix.L, model.matrix.X.times.A)
+    ## Need to handle this very carefulyl when a variable is a part of L and also a part of X; if i just combine with cbind(model.matrix.L, model.matrix.X.times.A), then the variable will be represented twice, and the earlier column will not be multiplied by A!
+        #model.matrix.all.times.A <- cbind(model.matrix.L, model.matrix.X.times.A)
+    #model.matrix.X.times.A.plus.AY.potential.dup <- cbind(model.matrix.X.times.A, model.matrix.L)
+    #model.matrix.X.times.A.plus.AY <- model.matrix.X.times.A.plus.AY.potential.dup[, !duplicated(colnames(model.matrix.X.times.A.plus.AY.potential.dup))]
     df.model.matrix.L <- as.data.frame(model.matrix.L)
     df.model.matrix.X.times.A <- as.data.frame(model.matrix.X.times.A)
     if (type.outcome == "binary") {
-        df.model.matrix.all.times.A <- data.frame("outcome"=data[, name.outcome], "outcome.fac"=outcome.fac,
+        df.model.matrix.X.times.A.plus.AY <- data.frame("outcome"=data[, name.outcome], "outcome.fac"=outcome.fac,
                                                              "fac.treatment.neg.pos"=fac.treatment.neg.pos,
-                                                              df.model.matrix.L,
+                                                              #df.model.matrix.L,
                                                               df.model.matrix.X.times.A)
+        ## df.model.matrix.X.times.A.plus.AY <- data.frame("outcome"=data[, name.outcome], "outcome.fac"=outcome.fac,
+        ##                                                      "fac.treatment.neg.pos"=fac.treatment.neg.pos,
+        ##                                                       df.model.matrix.L,
+        ##                                                       df.model.matrix.X.times.A)
     } else {
-        df.model.matrix.all.times.A <- data.frame("outcome"=data[, name.outcome], "outcome.centered"=outcome.centered,
+        df.model.matrix.X.times.A.plus.AY <- data.frame("outcome"=data[, name.outcome], "outcome.centered"=outcome.centered,
                                                                  "fac.treatment.neg.pos"=fac.treatment.neg.pos, 
-                                                                 df.model.matrix.L,
+                                                                #df.model.matrix.L,
                                                                  df.model.matrix.X.times.A)
+        ## df.model.matrix.X.times.A.plus.AY <- data.frame("outcome"=data[, name.outcome], "outcome.centered"=outcome.centered,
+        ##                                                          "fac.treatment.neg.pos"=fac.treatment.neg.pos, 
+        ##                                                          df.model.matrix.L,
+        ##                                                          df.model.matrix.X.times.A)
     }
     return(list("model.matrix.X.times.A"=model.matrix.X.times.A, "df.model.matrix.X.times.A"=df.model.matrix.X.times.A,
-                  "model.matrix.all.times.A"=model.matrix.all.times.A, "df.model.matrix.all.times.A"=df.model.matrix.all.times.A,
+                  #"model.matrix.X.times.A.plus.AY"=model.matrix.X.times.A.plus.AY,
+                  "df.model.matrix.X.times.A.plus.AY"=df.model.matrix.X.times.A.plus.AY,
                   "model.matrix.L"=model.matrix.L, "df.model.matrix.L"=df.model.matrix.L,
                   "model.matrix.X"=model.matrix.X, "df.model.matrix.X"=df.model.matrix.X,
                   "model.matrix.L.and.X"=model.matrix.L.and.X, "df.model.matrix.L.and.X"=df.model.matrix.L.and.X,
@@ -442,6 +463,8 @@ EvaluateRuleOnce <- function(data,
             }
             if (separate.propensity.estimation == TRUE) {
                 # Predict P(T=1 | L, B=1)
+                #print("names for eval propensity score")
+                #print(names(my.formatted.data$df.model.matrix.all[idx.test.positives, ]))
                 propensity.score.L.object.test.positives <- DoPrediction(data.matrix=my.formatted.data$model.matrix.all[idx.test.positives, ],
                                                                           data.df=my.formatted.data$df.model.matrix.all[idx.test.positives, ],
                                                                           name.response="fac.treatment",
