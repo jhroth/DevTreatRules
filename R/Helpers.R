@@ -1,3 +1,7 @@
+#' @import DynTxRegime
+#' @import modelObj
+
+
 Logit <- function(x) log(x / (1 - x))
 Expit <- function(x) exp(x) / (1 + exp(x))
 NamesToGlmFormula <- function(name.response, names.features, include.intercept) {
@@ -196,6 +200,7 @@ DoPrediction <- function(data.matrix,
                                   k.cv.folds,
                                   lambda.choice,
                                   include.intercept,
+                                  lambda.seq=NULL,
                                   exclude.A.from.penalty=FALSE) {
     stopifnot(is.logical(exclude.A.from.penalty))
     my.glm.formula <- NamesToGlmFormula(name.response=name.response,
