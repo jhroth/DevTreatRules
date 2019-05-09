@@ -8,7 +8,7 @@ GetComparisonRules <- function(scenario,
                                      clinical.threshold=0, 
                                      bootstrap.CI=FALSE) {
     # optimal rule
-    evaluate.optimal.rule <- EvaluateRule(data=test.df,
+    evaluate.optimal.rule <- EvaluateRule(evaluation.data=test.df,
                                       BuildRule.object=NULL,
                                       B=B.optimal,
                                       study.design=study.design,
@@ -23,7 +23,7 @@ GetComparisonRules <- function(scenario,
                                       bootstrap.CI=bootstrap.CI)
     # treating all
     B.treat.all <- rep(1, nrow(test.df))
-    evaluate.treat.all <- EvaluateRule(data=test.df,
+    evaluate.treat.all <- EvaluateRule(evaluation.data=test.df,
                                         BuildRule.object=NULL,
                                         B=B.treat.all,
                                         study.design=study.design,
@@ -38,7 +38,7 @@ GetComparisonRules <- function(scenario,
                                         bootstrap.CI=bootstrap.CI)
     # treating none
     B.treat.none <- rep(0, nrow(test.df))
-    evaluate.treat.none <- EvaluateRule(data=test.df,
+    evaluate.treat.none <- EvaluateRule(evaluation.data=test.df,
                                         BuildRule.object=NULL,
                                         B=B.treat.none,
                                         study.design=study.design,

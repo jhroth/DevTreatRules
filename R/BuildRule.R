@@ -2,20 +2,20 @@
 #'
 #' Perform principled development of a treatment rule (using the IPW approach to account for potential confounding) on a development dataset (i.e. training set) that is independent of datasets used for model selection (i.e. validation set) and rule evaluation (i.e. test set).
 #'
-#' @param data A data frame representing the *development* dataset (i.e. training set) used for building a treatment rule.
+#' @param development.data A data frame representing the *development* dataset (i.e. training set) used for building a treatment rule.
 #' @param study.design Either `observational', `RCT', or `naive'. For the \code{observational} design, the function uses inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function uses IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.
 #' @param prediction.approach One of `split.regression', `direct.interactions', `OWL', or `OWL.framework'.
-#' @param name.outcome A character indicating the name of the outcome variable in \code{data}.
+#' @param name.outcome A character indicating the name of the outcome variable in \code{development.data}.
 #' @param type.outcome Either `binary' or `continuous', the form of \code{name.outcome}.
-#' @param name.treatment A character indicating the name of the treatment variable in \code{data}.
-#' @param names.influencing.treatment A character vector (or single element) indicating the names of the variables in \code{data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.
-#' @param names.influencing.rule A character vector (or single element) indicating the names of the variables in \code{data} that may influence response to treatment and are expected to be observed in future clinical settings.
+#' @param name.treatment A character indicating the name of the treatment variable in \code{development.data}.
+#' @param names.influencing.treatment A character vector (or single element) indicating the names of the variables in \code{development.data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.
+#' @param names.influencing.rule A character vector (or single element) indicating the names of the variables in \code{development.data} that may influence response to treatment and are expected to be observed in future clinical settings.
 #' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. for a binary outcome, a 1 is more desirable than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome.
 #' @param rule.method One of `glm.regression', `lasso', or `ridge'. For \code{type.outcome=}`binary', `glm.regression' leads to logistic regression; for a \code{type.outcome=}`continuous', `glm.regression' specifies linear regression. This is the underlying regression model used to develop the treatment rule.
 #' @param propensity.method One of `logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores for \code{study.design=}`observational'.
 #' @param truncate.propensity.score A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be no more than \code{truncate.propensity.score.threshold} away from 0 or 1.
 #' @param truncate.propensity.score.threshold A numeric value between 0 and 0.25.
-#' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{data}. This can be used, for example, to account for a non-representative sampling design or to apply an IPW adjustment for missingness. The default is a vector of 1s.
+#' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{development.data}. This can be used, for example, to account for a non-representative sampling design or to apply an IPW adjustment for missingness. The default is a vector of 1s.
 #' @param type.observation.weights Default is NULL, but other choices are `IPW.L', `IPW.L.and.X', and `IPW.ratio', where L indicates \code{names.influencing.treatment}, X indicates \code{names.influencing.rule}. The default behavior is to use the `IPW.ratio' observation weights (propensity score based on X divided by propensity score based on L and X) for \code{prediction.approach=}`split.regression' and to use `IPW.L' observation weights (inverse of propensity score based on L) for the `direct.interactions', `OWL', and `OWL.framework' prediction approaches.
 #' @param propensity.k.cv.folds An integer specifying how many folds to use for K-fold cross-validation that chooses the tuning parameters when \code{propensity.method} is `lasso' or `ridge'. Default is 10.
 #' @param rule.k.cv.folds An integer specifying how many folds to use for K-fold cross-validation that chooses the tuning parameter when \code{rule.method} is \code{lasso} or `ridge'. Default is 10.
@@ -40,7 +40,30 @@
 #'   \item \code{rule.object}: For \code{prediction.approach=}`OWL.framework' or \code{prediction.approach=}`direct.interactions', the regression object returned from treatment rule estimation (to which the \code{coef()} function could be applied, for example)
 #'   \item \code{rule.object.control}: For \code{prediction.approach=}`split.regression' the regression object returned from treatment rule estimation (to which the \code{coef()} function could be applied, for example) that estimates the outcome variable for individuals who do not receive treatment.
 #'   \item \code{rule.object.treatment}: For \code{prediction.approach=}`split.regression' the regression object returned from treatment rule estimation (to which the \code{coef()} function could be applied, for example) that estimates the outcome variable for individuals who do receive treatment.
+#' }
 
+#' @references
+#' \itemize{
+#' \item Yingqi Zhao, Donglin Zeng, A. John Rush & Michael R. Kosorok  (2012)
+#' Estimating individualized treatment rules using outcome weighted learning.
+#' Journal of the American Statistical Association,
+#' 107:499 1106--1118.
+
+#' \item Shuai Chen, Lu Tian, Tianxi Cai, Menggang Yu (2017)
+#' A general statistical framework for subgroup identification and comparative treatment scoring.
+#' Biometrics,
+#' 73:4: 1199--1209.
+
+#' \item Lu Tian, Ash A. Alizadeh, Andrew J. Gentles, Robert Tibshirani (2014)
+#' A simple method for estimating interactions between a treatment and a large number of covariates.
+#' Journal of the American Statistical Association,
+#' 109:508: 1517--1532.
+#' \item Jeremy Roth and Noah Simon (2019).
+#' Using propensity scores to develop and evaluate treatment rules with observational data
+#' (Manuscript in progress)
+#' \item Jeremy Roth and Noah Simon (2019).
+#' Elucidating outcome-weighted learning and its comparison to split-regression: direct vs. indirect methods in practice.
+#' (Manuscript in progress)
 #' }
 
 #' @examples
@@ -48,7 +71,7 @@
 #' example.split <- SplitData(data=obsStudyGeneExpressions,
 #'                                      n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 #' development.data <- example.split[example.split$partition == "development",]
-#' one.rule <- BuildRule(data=development.data,
+#' one.rule <- BuildRule(development.data=development.data,
 #'                      study.design="observational",
 #'                      prediction.approach="split.regression",
 #'                      name.outcome="no_relapse",
@@ -65,7 +88,7 @@
 #' @import DynTxRegime
 #' @export
 
-BuildRule <- function(data,
+BuildRule <- function(development.data,
                       study.design, #=c("RCT", "observational"),
                       prediction.approach, #=c("OWL", "OWL.framework", "split.regression", "direct.interactions"),
                       name.outcome,
@@ -76,7 +99,7 @@ BuildRule <- function(data,
                       desirable.outcome,
                       rule.method=NULL,
                       propensity.method,
-                      additional.weights=rep(1, nrow(data)),
+                      additional.weights=rep(1, nrow(development.data)),
                       truncate.propensity.score=TRUE,
                       truncate.propensity.score.threshold=0.05,
                       type.observation.weights=NULL,
@@ -92,10 +115,10 @@ BuildRule <- function(data,
                       direct.interactions.center.continuous.Y=TRUE,
                       direct.interactions.exclude.A.from.penalty=TRUE) {
     # LOTS of checks
-    if (is.data.frame(data) == FALSE) {
+    if (is.data.frame(development.data) == FALSE) {
         stop("dataset must be a data frame")
     }
-    if (all(data[, name.treatment] %in% c(0, 1)) == FALSE) {
+    if (all(development.data[, name.treatment] %in% c(0, 1)) == FALSE) {
         stop("treatment needs to be coded as a binary indicator")
     }
     if (!(study.design %in% c("RCT", "observational", "naive"))) {
@@ -117,7 +140,7 @@ BuildRule <- function(data,
         type.observation.weights <- "IPW.L.and.X"
     }
     lambda.choice <- match.arg(lambda.choice)
-    if (min(data[, name.outcome], na.rm=TRUE) < 0 & prediction.approach %in% c("OWL", "OWL.framework")) {
+    if (min(development.data[, name.outcome], na.rm=TRUE) < 0 & prediction.approach %in% c("OWL", "OWL.framework")) {
         stop("negative values of the outcome are not allowed when fitting OWL or  OWL framework can accommodate this")
     }
     if (is.logical(desirable.outcome) == FALSE) {
@@ -153,16 +176,16 @@ BuildRule <- function(data,
     if (truncate.propensity.score.threshold < 0 | truncate.propensity.score.threshold > 0.25) {
         stop("truncate.propensity.scorethreshold should be between 0 and 0.25")
     }
-    stopifnot(length(additional.weights) == nrow(data))
+    stopifnot(length(additional.weights) == nrow(development.data))
     stopifnot(is.numeric(additional.weights))
     # format the data frame and return different model.matrix objects (as data frames and matrices)
-    my.formatted.data <- FormatData(data=data,
+    my.formatted.data <- FormatData(data=development.data,
                                                     name.outcome=name.outcome,
                                                     name.treatment=name.treatment,
                                                     type.outcome=type.outcome,
                                                     names.influencing.rule=names.influencing.rule,
                                                     names.influencing.treatment=names.influencing.treatment)
-    n <- nrow(data)
+    n <- nrow(development.data)
     idx.control <- which(my.formatted.data$df.model.matrix.all[, "treatment"] == 0)
     idx.treatment <- which(my.formatted.data$df.model.matrix.all[, "treatment"] == 1)
     if (study.design == "observational") {

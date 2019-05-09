@@ -4,10 +4,11 @@
 \alias{BuildRule}
 \title{Build a Treatment Rule}
 \usage{
-BuildRule(data, study.design, prediction.approach, name.outcome, type.outcome,
-  name.treatment, names.influencing.treatment = NULL, names.influencing.rule,
-  desirable.outcome, rule.method = NULL, propensity.method,
-  additional.weights = rep(1, nrow(data)), truncate.propensity.score = TRUE,
+BuildRule(development.data, study.design, prediction.approach, name.outcome,
+  type.outcome, name.treatment, names.influencing.treatment = NULL,
+  names.influencing.rule, desirable.outcome, rule.method = NULL,
+  propensity.method, additional.weights = rep(1, nrow(development.data)),
+  truncate.propensity.score = TRUE,
   truncate.propensity.score.threshold = 0.05,
   type.observation.weights = NULL, propensity.k.cv.folds = 10,
   rule.k.cv.folds = 10, lambda.choice = c("min", "1se"),
@@ -17,21 +18,21 @@ BuildRule(data, study.design, prediction.approach, name.outcome, type.outcome,
   direct.interactions.exclude.A.from.penalty = TRUE)
 }
 \arguments{
-\item{data}{A data frame representing the *development* dataset (i.e. training set) used for building a treatment rule.}
+\item{development.data}{A data frame representing the *development* dataset (i.e. training set) used for building a treatment rule.}
 
 \item{study.design}{Either `observational', `RCT', or `naive'. For the \code{observational} design, the function uses inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function uses IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.}
 
 \item{prediction.approach}{One of `split.regression', `direct.interactions', `OWL', or `OWL.framework'.}
 
-\item{name.outcome}{A character indicating the name of the outcome variable in \code{data}.}
+\item{name.outcome}{A character indicating the name of the outcome variable in \code{development.data}.}
 
 \item{type.outcome}{Either `binary' or `continuous', the form of \code{name.outcome}.}
 
-\item{name.treatment}{A character indicating the name of the treatment variable in \code{data}.}
+\item{name.treatment}{A character indicating the name of the treatment variable in \code{development.data}.}
 
-\item{names.influencing.treatment}{A character vector (or single element) indicating the names of the variables in \code{data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.}
+\item{names.influencing.treatment}{A character vector (or single element) indicating the names of the variables in \code{development.data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.}
 
-\item{names.influencing.rule}{A character vector (or single element) indicating the names of the variables in \code{data} that may influence response to treatment and are expected to be observed in future clinical settings.}
+\item{names.influencing.rule}{A character vector (or single element) indicating the names of the variables in \code{development.data} that may influence response to treatment and are expected to be observed in future clinical settings.}
 
 \item{desirable.outcome}{A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. for a binary outcome, a 1 is more desirable than a 0). The \code{OWL.framework} and \code{OWL} prediction approaches require a desirable outcome.}
 
@@ -39,7 +40,7 @@ BuildRule(data, study.design, prediction.approach, name.outcome, type.outcome,
 
 \item{propensity.method}{One of `logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores for \code{study.design=}`observational'.}
 
-\item{additional.weights}{A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{data}. This can be used, for example, to account for a non-representative sampling design or to apply an IPW adjustment for missingness. The default is a vector of 1s.}
+\item{additional.weights}{A numeric vector of observation weights that will be multiplied by IPW weights in the rule development stage, with length equal to the number of rows in \code{development.data}. This can be used, for example, to account for a non-representative sampling design or to apply an IPW adjustment for missingness. The default is a vector of 1s.}
 
 \item{truncate.propensity.score}{A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be no more than \code{truncate.propensity.score.threshold} away from 0 or 1.}
 
@@ -92,7 +93,7 @@ set.seed(123)
 example.split <- SplitData(data=obsStudyGeneExpressions,
                                      n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 development.data <- example.split[example.split$partition == "development",]
-one.rule <- BuildRule(data=development.data,
+one.rule <- BuildRule(development.data=development.data,
                      study.design="observational",
                      prediction.approach="split.regression",
                      name.outcome="no_relapse",
@@ -105,4 +106,26 @@ one.rule <- BuildRule(data=development.data,
                      rule.method="glm.regression")
 coef(one.rule$rule.object.control)
 coef(one.rule$rule.object.treatment)
+}
+\references{
+\itemize{
+\item Yingqi Zhao, Donglin Zeng, A. John Rush & Michael R. Kosorok  (2012)
+Estimating individualized treatment rules using outcome weighted learning.
+Journal of the American Statistical Association,
+107:499 1106--1118.
+\item Shuai Chen, Lu Tian, Tianxi Cai, Menggang Yu (2017)
+A general statistical framework for subgroup identification and comparative treatment scoring.
+Biometrics,
+73:4: 1199--1209.
+\item Lu Tian, Ash A. Alizadeh, Andrew J. Gentles, Robert Tibshirani (2014)
+A simple method for estimating interactions between a treatment and a large number of covariates.
+Journal of the American Statistical Association,
+109:508: 1517--1532.
+\item Jeremy Roth and Noah Simon (2019).
+Using propensity scores to develop and evaluate treatment rules with observational data
+(Manuscript in progress)
+\item Jeremy Roth and Noah Simon (2019).
+Elucidating outcome-weighted learning and its comparison to split-regression: direct vs. indirect methods in practice.
+(Manuscript in progress)
+}
 }

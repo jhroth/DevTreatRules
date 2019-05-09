@@ -134,7 +134,7 @@ CompareRulesOnValidation <- function(development.data,
                 for (p in 1:length(vec.propensity.methods)) {
                     one.propensity.method <- vec.propensity.methods[p]
                     # build rule on development dataset for each combination of approach/rule.method/propensity/method 
-                    build.one <- BuildRule(data=development.data,
+                    build.one <- BuildRule(development.data=development.data,
                                            study.design=study.design.development,
                                            prediction.approach=one.approach,
                                            name.outcome=name.outcome.development,
@@ -162,7 +162,7 @@ CompareRulesOnValidation <- function(development.data,
                                            direct.interactions.exclude.A.from.penalty=direct.interactions.exclude.A.from.penalty)
                     
                     # evaluate the rule returned by BuildRule() on the validation data
-                    evaluate.one <- EvaluateRule(data=validation.data,
+                    evaluate.one <- EvaluateRule(evaluation.data=validation.data,
                                                  BuildRule.object=build.one,
                                                  study.design=study.design.validation,
                                                  name.outcome=name.outcome.validation,
@@ -199,7 +199,7 @@ CompareRulesOnValidation <- function(development.data,
                     row.number <- row.number + 1
                 }
             }
-            evaluate.one.with.naive <- EvaluateRule(data=validation.data,
+            evaluate.one.with.naive <- EvaluateRule(evaluation.data=validation.data,
                                                     BuildRule.object=build.one,
                                                     study.design=study.design.validation,
                                                     name.outcome=name.outcome.validation,
@@ -223,7 +223,7 @@ CompareRulesOnValidation <- function(development.data,
             for (p in 1:length(vec.propensity.methods)) {
                 one.propensity.method <- vec.propensity.methods[p]
                 # build rule on development dataset for each combination of approach/rule.method/propensity/method 
-                build.one <- BuildRule(data=development.data,
+                build.one <- BuildRule(development.data=development.data,
                                        study.design=study.design.development,
                                        prediction.approach=one.approach,
                                        name.outcome=name.outcome.development,
@@ -251,7 +251,7 @@ CompareRulesOnValidation <- function(development.data,
                                        direct.interactions.exclude.A.from.penalty=direct.interactions.exclude.A.from.penalty)
                 
                 # evaluate the rule returned by BuildRule() on the validation data
-                evaluate.one <- EvaluateRule(data=validation.data,
+                evaluate.one <- EvaluateRule(evaluation.data=validation.data,
                                              BuildRule.object=build.one,
                                              study.design=study.design.validation,
                                              name.outcome=name.outcome.validation,

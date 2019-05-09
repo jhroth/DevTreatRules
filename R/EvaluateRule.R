@@ -2,25 +2,25 @@
 #'
 #' Perform principled evaluation of a treatment rule (using the IPW approach to account for potential confounding) on a dataset that is independent of the development dataset on which the rule was developed, either to perform model selection (with a validation dataset) or to obtain trustworthy estimates of performance for a pre-specified treatment rule (with an evaluation dataset).
 #'
-#' @param data A data frame representing the *validation* or *evaluation* dataset used to estimate the performance of a rule that was developed on an independent development dataset.
+#' @param evaluation.data A data frame representing the *validation* or *evaluation* dataset used to estimate the performance of a rule that was developed on an independent development dataset.
 #' @param BuildRule.object The object returned by the \code{BuildRule()} function. Defaults to NULL but is required if a treatment rule is not provided in the \code{B} argument. Only one of \code{BuildRule.object} and \code{B} should be specified. 
-#' @param B A numeric vector representing a pre-specified treatment rule, which must have length equal to the number of rows in \code{data} and elements equal to \code{0/FALSE} indicating no treatment and \code{1/TRUE} indicating treatment. Defaults to \code{NULL} but is required if \code{BuildRule.object} is not specified.  Only one of \code{BuildRule.object} and \code{B} should be specified. 
+#' @param B A numeric vector representing a pre-specified treatment rule, which must have length equal to the number of rows in \code{evaluation.data} and elements equal to \code{0/FALSE} indicating no treatment and \code{1/TRUE} indicating treatment. Defaults to \code{NULL} but is required if \code{BuildRule.object} is not specified.  Only one of \code{BuildRule.object} and \code{B} should be specified. 
 #' @param study.design Either `observational', `RCT', or `naive'. For the \code{observational} design, the function will use inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function will use IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.
-#' @param name.outcome A character indicating the name of the outcome variable in \code{data}.
+#' @param name.outcome A character indicating the name of the outcome variable in \code{evaluation.data}.
 #' @param type.outcome Either `binary' or `continuous', the form of \code{name.outcome}.
 #' @param desirable.outcome A logical equal to \code{TRUE} if higher values of the outcome are considered desirable (e.g. for a binary outcome, 1 is more desirable than 0). The \code{OWL.framework} and \code{OWL} approaches to treatment rule estimation require a desirable outcome.
 #' @param separate.propensity.estimation A logical equal to \code{TRUE} if propensity scores should be estimated separately in the test-positives and test-negatives subpopulations and equal to \code{FALSE} if propensity scores should be estimated in the combined sample. Default is \code{TRUE}.
 #' @param clinical.threshold A numeric equal to a positive number above which the predicted outcome under treatment must be superior to the predicted outcome under control for treatment to be recommended. Only used when \code{BuildRuleObject} was specified and derived from the split-regression or direct-interactions approach. Default is 0.
-#' @param name.treatment A character indicating the name of the treatment variable in \code{data}.
-#' @param names.influencing.treatment A character vector (or element) indicating the names of the variables in \code{data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'. 
-#' @param names.influencing.rule A character vector (or element) indicating the names of the variables in \code{data} that may influence response to treatment and are expected to be observed in future clinical settings.
+#' @param name.treatment A character indicating the name of the treatment variable in \code{evaluation.data}.
+#' @param names.influencing.treatment A character vector (or element) indicating the names of the variables in \code{evaluation.data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'. 
+#' @param names.influencing.rule A character vector (or element) indicating the names of the variables in \code{evaluation.data} that may influence response to treatment and are expected to be observed in future clinical settings.
 #' @param propensity.method One of`logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational'. If \code{bootstrap.CI=TRUE}, then \code{propensity.method} must be `logistic.regression'. Defaults to NULL.
 #' @param show.treat.all A logical variable dictating whether summaries for the naive rule that assigns treatment to all observations are reported, which help put the performance of the estimated treatment rule in context. Default is TRUE
 #' @param show.treat.none A logical variable dictating whether summaries for the naive rule that assigns treatment to no observations are reported, which help put the performance of the estimated treatment rule in context. Default is TRUE
 #' @param truncate.propensity.score A logical variable dictating whether estimated propensity scores less than \code{truncate.propensity.score.threshold} away from 0 or 1 should be truncated to be \code{truncate.propensity.score.threshold} away from 0 or 1.
 #' @param truncate.propensity.score.threshold A numeric value between 0 and 0.25.
-#' @param observation.weights A numeric vector equal to the number of rows in \code{data} that provides observation weights to be used in place of the IPW weights estimated with \code{propensity.method}. Defaults to NULL. Only one of the \code{propensity.method} and \code{observation.weights} should be specified.
-#' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule evaluation stage, with length equal to the number of rows in \code{data}.. This can be used, for example, to account for a non-representative sampling design or to apply an IPW adjustment for missingness. The default is a vector of 1s.
+#' @param observation.weights A numeric vector equal to the number of rows in \code{evaluation.data} that provides observation weights to be used in place of the IPW weights estimated with \code{propensity.method}. Defaults to NULL. Only one of the \code{propensity.method} and \code{observation.weights} should be specified.
+#' @param additional.weights A numeric vector of observation weights that will be multiplied by IPW weights in the rule evaluation stage, with length equal to the number of rows in \code{evaluation.data}.. This can be used, for example, to account for a non-representative sampling design or to apply an IPW adjustment for missingness. The default is a vector of 1s.
 #' @param lambda.choice Either `min' or `1se', corresponding to the \code{s} argument in \code{predict.cv.glmnet()} from the \code{glmnet} package; only used when \code{propensity.method} or \code{rule.method} is `lasso' or `ridge'. Default is `min'.
 #' @param propensity.k.cv.folds An integer dictating how many folds to use for K-fold cross-validation that chooses the tuning parameter when \code{propensity.method} is `lasso' or `ridge'. Default is 10.
 #' @param bootstrap.CI Logical indicating whether the ATE/ABR estimates returned by \code{EvaluateRule()} should be accompanied by 95\% confidence intervals based on the bootstrap. Default is \code{FALSE}
@@ -28,9 +28,9 @@
 #' @param bootstrap.type One character element specifying the type of bootstrap CI that should be computed. Currently the only supported option is \code{bootstrap.type=}`basic', but this may be expanded in the future.
 #' @return A list with the following components
 #' \itemize{
-#'   \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{data}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{data}.
+#'   \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{evaluation.data}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{evaluation.data}.
 #'   \item \code{fit.object}: A list consisting of one of the following: the propensity scores estimated in the test-positives and in the test-negatives (if \code{separate.propensity.estimation=TRUE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); the propensity scores estimated in the combined sample (if \code{separate.propensity.estimation=FALSE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); and simply is simply null if \code{study.design=}`RCT' (in which case propensity score would just be the inverse of the sample proportion receiving treatment)
-#' \item \code{summaries}: a matrix with columns reporting the following summaries of treatment rule performance: the number of observations in \code{data} recommended to receive treatment. (\code{n.positives}); the estimated average treatment effect among those recommended to receive treatment (\code{ATE.positives}); the number of observations in \code{data} recommended to not receive treatment (\code{n.negatives}); the estimated average treatment effect among those recommended to not receive treatment (\code{ATE.negatives}); the estimated average benefit of using the rule, with the weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives (\code{ABR}). If \code{bootstrap.CI=TRUE}, then 4 additional columns are included, showing the lower bound (LB) and upper bound (UB) of the 95\% CIs for \code{ATE.positives} and \code{ATE.negatives}.
+#' \item \code{summaries}: a matrix with columns reporting the following summaries of treatment rule performance: the number of observations in \code{evaluation.data} recommended to receive treatment. (\code{n.positives}); the estimated average treatment effect among those recommended to receive treatment (\code{ATE.positives}); the number of observations in \code{evaluation.data} recommended to not receive treatment (\code{n.negatives}); the estimated average treatment effect among those recommended to not receive treatment (\code{ATE.negatives}); the estimated average benefit of using the rule, with the weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives (\code{ABR}). If \code{bootstrap.CI=TRUE}, then 4 additional columns are included, showing the lower bound (LB) and upper bound (UB) of the 95\% CIs for \code{ATE.positives} and \code{ATE.negatives}.
 #' }
 #' @examples
 #' set.seed(123)
@@ -38,7 +38,7 @@
 #'                                      n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 #' development.data <- example.split[example.split$partition == "development",]
 #' validation.data <- example.split[example.split$partition == "validation",]
-#' one.rule <- BuildRule(data=development.data,
+#' one.rule <- BuildRule(development.data=development.data,
 #'                      study.design="observational",
 #'                      prediction.approach="split.regression",
 #'                      name.outcome="no_relapse",
@@ -49,7 +49,7 @@
 #'                      names.influencing.rule=c("age", paste0("gene_", 1:10)),
 #'                      propensity.method="logistic.regression",
 #'                      rule.method="glm.regression")
-#' split.validation <- EvaluateRule(data=validation.data,
+#' split.validation <- EvaluateRule(evaluation.data=validation.data,
 #'                           BuildRule.object=one.rule,
 #'                           study.design="observational",
 #'                           name.outcome="no_relapse",
@@ -64,7 +64,7 @@
 #'                        "ATE.positives", "ATE.negatives", "ABR")]
 #' @export
 
-EvaluateRule <- function(data,
+EvaluateRule <- function(evaluation.data,
                                   BuildRule.object=NULL,
                                   B=NULL,
                                   study.design, #=c("RCT", "observational"),
@@ -82,7 +82,7 @@ EvaluateRule <- function(data,
                                   truncate.propensity.score=TRUE,
                                   truncate.propensity.score.threshold=0.05, 
                                   observation.weights=NULL,
-                                  additional.weights=rep(1, nrow(data)),
+                                  additional.weights=rep(1, nrow(evaluation.data)),
                                   lambda.choice=c("min", "1se"),
                                   propensity.k.cv.folds=10,
                                   bootstrap.CI=FALSE,
@@ -103,10 +103,10 @@ EvaluateRule <- function(data,
     }
     if (!is.null(observation.weights) & !is.numeric(observation.weights))
         stop("if observation weights are provided, they need to be numeric")
-    if (!is.data.frame(data)) {
+    if (!is.data.frame(evaluation.data)) {
         stop("dataset must be a data frame")
     }
-    if (all(data[, name.treatment] %in% c(0, 1)) == FALSE) {
+    if (all(evaluation.data[, name.treatment] %in% c(0, 1)) == FALSE) {
         stop("treatment needs to be coded as a binary indicator")
     }
     if (is.null(BuildRule.object) & is.null(B)) {
@@ -114,7 +114,7 @@ EvaluateRule <- function(data,
     }
     if (!is.null(B)) {
         stopifnot(is.numeric(B))
-        stopifnot(length(B) == nrow(data))
+        stopifnot(length(B) == nrow(evaluation.data))
     }
     if (is.null(BuildRule.object) == FALSE) {
         prediction.approach <- BuildRule.object$prediction.approach
@@ -133,7 +133,7 @@ EvaluateRule <- function(data,
     if (truncate.propensity.score.threshold < 0 | truncate.propensity.score.threshold > 0.25) {
         stop("truncate.propensity.scorethreshold should be between 0 and 0.25")
     }
-    stopifnot(length(additional.weights) == nrow(data))
+    stopifnot(length(additional.weights) == nrow(evaluation.data))
     stopifnot(is.numeric(additional.weights))
     stopifnot(is.logical(separate.propensity.estimation))
     if (show.treat.all == TRUE & show.treat.none == TRUE) {
@@ -149,14 +149,14 @@ EvaluateRule <- function(data,
         nrow.summaries <- 1
         rownames.summaries <- c("estimated.rule")
     }
-    n <- nrow(data)
-    my.formatted.data <- FormatData(data=data,
+    n <- nrow(evaluation.data)
+    my.formatted.data <- FormatData(data=evaluation.data,
                                                    name.outcome=name.outcome,
                                                    name.treatment=name.treatment,
                                                    type.outcome=type.outcome,
                                                    names.influencing.rule=names.influencing.rule,
                                                    names.influencing.treatment=names.influencing.treatment)
-    do.one.EvaluateRule <- EvaluateRuleOnce(data=data,
+    do.one.EvaluateRule <- EvaluateRuleOnce(data=evaluation.data,
                                                my.formatted.data=my.formatted.data,
                                                BuildRule.object=BuildRule.object,
                                                B=B,
@@ -175,10 +175,10 @@ EvaluateRule <- function(data,
                                                lambda.choice=lambda.choice,
                                                propensity.k.cv.folds=propensity.k.cv.folds)
     if (show.treat.all == TRUE) {
-        do.one.EvaluateRule.treat.all <- EvaluateRuleOnce(data=data,
+        do.one.EvaluateRule.treat.all <- EvaluateRuleOnce(data=evaluation.data,
                                                           my.formatted.data=my.formatted.data,
                                                           BuildRule.object=NULL,
-                                                          B=rep(1, nrow(data)),
+                                                          B=rep(1, nrow(evaluation.data)),
                                                           study.design=study.design, 
                                                           type.outcome=type.outcome,
                                                           desirable.outcome=desirable.outcome,
@@ -195,10 +195,10 @@ EvaluateRule <- function(data,
                                                           propensity.k.cv.folds=propensity.k.cv.folds)
     }
     if (show.treat.none == TRUE) {
-        do.one.EvaluateRule.treat.none <- EvaluateRuleOnce(data=data,
+        do.one.EvaluateRule.treat.none <- EvaluateRuleOnce(data=evaluation.data,
                                                            my.formatted.data=my.formatted.data,
                                                            BuildRule.object=NULL,
-                                                           B=rep(0, nrow(data)),
+                                                           B=rep(0, nrow(evaluation.data)),
                                                            study.design=study.design, 
                                                            type.outcome=type.outcome,
                                                            desirable.outcome=desirable.outcome,
@@ -227,7 +227,7 @@ EvaluateRule <- function(data,
         vec.mean.ABR <- rep(NA, bootstrap.CI.replications)
         for (b in 1:bootstrap.CI.replications) {
             idx.boot <- sample(1:n, size=n, replace=TRUE)
-            my.formatted.data.boot <- FormatData(data=data[idx.boot, ],
+            my.formatted.data.boot <- FormatData(data=evaluation.data[idx.boot, ],
                                                   name.outcome=name.outcome,
                                                   name.treatment=name.treatment,
                                                   type.outcome=type.outcome,
@@ -238,7 +238,7 @@ EvaluateRule <- function(data,
             } else {
                 boot.observation.weights <- NULL
             }
-            do.one.EvaluateRule.boot <- EvaluateRuleOnce(data=data[idx.boot, ],
+            do.one.EvaluateRule.boot <- EvaluateRuleOnce(data=evaluation.data[idx.boot, ],
                                                             my.formatted.data=my.formatted.data.boot,
                                                             BuildRule.object=BuildRule.object,
                                                             B=B[idx.boot], 

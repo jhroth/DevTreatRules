@@ -4,27 +4,28 @@
 \alias{EvaluateRule}
 \title{Evaluate a Treatment Rule}
 \usage{
-EvaluateRule(data, BuildRule.object = NULL, B = NULL, study.design,
-  name.outcome, type.outcome, desirable.outcome,
+EvaluateRule(evaluation.data, BuildRule.object = NULL, B = NULL,
+  study.design, name.outcome, type.outcome, desirable.outcome,
   separate.propensity.estimation = TRUE, clinical.threshold = 0,
   name.treatment, names.influencing.treatment, names.influencing.rule,
   propensity.method = NULL, show.treat.all = TRUE, show.treat.none = TRUE,
   truncate.propensity.score = TRUE,
   truncate.propensity.score.threshold = 0.05, observation.weights = NULL,
-  additional.weights = rep(1, nrow(data)), lambda.choice = c("min", "1se"),
-  propensity.k.cv.folds = 10, bootstrap.CI = FALSE,
-  bootstrap.CI.replications = 1000, bootstrap.type = "basic")
+  additional.weights = rep(1, nrow(evaluation.data)),
+  lambda.choice = c("min", "1se"), propensity.k.cv.folds = 10,
+  bootstrap.CI = FALSE, bootstrap.CI.replications = 1000,
+  bootstrap.type = "basic")
 }
 \arguments{
-\item{data}{A data frame representing the *validation* or *evaluation* dataset used to estimate the performance of a rule that was developed on an independent development dataset.}
+\item{evaluation.data}{A data frame representing the *validation* or *evaluation* dataset used to estimate the performance of a rule that was developed on an independent development dataset.}
 
 \item{BuildRule.object}{The object returned by the \code{BuildRule()} function. Defaults to NULL but is required if a treatment rule is not provided in the \code{B} argument. Only one of \code{BuildRule.object} and \code{B} should be specified.}
 
-\item{B}{A numeric vector representing a pre-specified treatment rule, which must have length equal to the number of rows in \code{data} and elements equal to \code{0/FALSE} indicating no treatment and \code{1/TRUE} indicating treatment. Defaults to \code{NULL} but is required if \code{BuildRule.object} is not specified.  Only one of \code{BuildRule.object} and \code{B} should be specified.}
+\item{B}{A numeric vector representing a pre-specified treatment rule, which must have length equal to the number of rows in \code{evaluation.data} and elements equal to \code{0/FALSE} indicating no treatment and \code{1/TRUE} indicating treatment. Defaults to \code{NULL} but is required if \code{BuildRule.object} is not specified.  Only one of \code{BuildRule.object} and \code{B} should be specified.}
 
 \item{study.design}{Either `observational', `RCT', or `naive'. For the \code{observational} design, the function will use inverse-probability-of-treatment observation weights (IPW) based on estimated propensity scores with predictors \code{names.influencing.treatment}; for the \code{RCT} design, the function will use IPW based on propensity scores equal to the observed sample proportions; for the \code{naive} design, all observation weights will be uniformly equal to 1.}
 
-\item{name.outcome}{A character indicating the name of the outcome variable in \code{data}.}
+\item{name.outcome}{A character indicating the name of the outcome variable in \code{evaluation.data}.}
 
 \item{type.outcome}{Either `binary' or `continuous', the form of \code{name.outcome}.}
 
@@ -34,11 +35,11 @@ EvaluateRule(data, BuildRule.object = NULL, B = NULL, study.design,
 
 \item{clinical.threshold}{A numeric equal to a positive number above which the predicted outcome under treatment must be superior to the predicted outcome under control for treatment to be recommended. Only used when \code{BuildRuleObject} was specified and derived from the split-regression or direct-interactions approach. Default is 0.}
 
-\item{name.treatment}{A character indicating the name of the treatment variable in \code{data}.}
+\item{name.treatment}{A character indicating the name of the treatment variable in \code{evaluation.data}.}
 
-\item{names.influencing.treatment}{A character vector (or element) indicating the names of the variables in \code{data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.}
+\item{names.influencing.treatment}{A character vector (or element) indicating the names of the variables in \code{evaluation.data} that are expected to influence treatment assignment in the current dataset. Required for \code{study.design=}`observational'.}
 
-\item{names.influencing.rule}{A character vector (or element) indicating the names of the variables in \code{data} that may influence response to treatment and are expected to be observed in future clinical settings.}
+\item{names.influencing.rule}{A character vector (or element) indicating the names of the variables in \code{evaluation.data} that may influence response to treatment and are expected to be observed in future clinical settings.}
 
 \item{propensity.method}{One of`logistic.regression', `lasso', or `ridge'. This is the underlying regression model used to estimate propensity scores (for \code{study.design=}`observational'. If \code{bootstrap.CI=TRUE}, then \code{propensity.method} must be `logistic.regression'. Defaults to NULL.}
 
@@ -50,9 +51,9 @@ EvaluateRule(data, BuildRule.object = NULL, B = NULL, study.design,
 
 \item{truncate.propensity.score.threshold}{A numeric value between 0 and 0.25.}
 
-\item{observation.weights}{A numeric vector equal to the number of rows in \code{data} that provides observation weights to be used in place of the IPW weights estimated with \code{propensity.method}. Defaults to NULL. Only one of the \code{propensity.method} and \code{observation.weights} should be specified.}
+\item{observation.weights}{A numeric vector equal to the number of rows in \code{evaluation.data} that provides observation weights to be used in place of the IPW weights estimated with \code{propensity.method}. Defaults to NULL. Only one of the \code{propensity.method} and \code{observation.weights} should be specified.}
 
-\item{additional.weights}{A numeric vector of observation weights that will be multiplied by IPW weights in the rule evaluation stage, with length equal to the number of rows in \code{data}.. This can be used, for example, to account for a non-representative sampling design or to apply an IPW adjustment for missingness. The default is a vector of 1s.}
+\item{additional.weights}{A numeric vector of observation weights that will be multiplied by IPW weights in the rule evaluation stage, with length equal to the number of rows in \code{evaluation.data}.. This can be used, for example, to account for a non-representative sampling design or to apply an IPW adjustment for missingness. The default is a vector of 1s.}
 
 \item{lambda.choice}{Either `min' or `1se', corresponding to the \code{s} argument in \code{predict.cv.glmnet()} from the \code{glmnet} package; only used when \code{propensity.method} or \code{rule.method} is `lasso' or `ridge'. Default is `min'.}
 
@@ -67,9 +68,9 @@ EvaluateRule(data, BuildRule.object = NULL, B = NULL, study.design,
 \value{
 A list with the following components
 \itemize{
-  \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{data}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{data}.
+  \item \code{recommended.treatment}: A numeric vector of 0s and 1s, with length equal to the number of rows in \code{evaluation.data}, where a 0 indicates treatment is not recommended and a 1 indicates treatment is recommended for the corresponding observation in \code{evaluation.data}.
   \item \code{fit.object}: A list consisting of one of the following: the propensity scores estimated in the test-positives and in the test-negatives (if \code{separate.propensity.estimation=TRUE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); the propensity scores estimated in the combined sample (if \code{separate.propensity.estimation=FALSE}, \code{study.design=}`observational', and \code{observation.weights=NULL}); and simply is simply null if \code{study.design=}`RCT' (in which case propensity score would just be the inverse of the sample proportion receiving treatment)
-\item \code{summaries}: a matrix with columns reporting the following summaries of treatment rule performance: the number of observations in \code{data} recommended to receive treatment. (\code{n.positives}); the estimated average treatment effect among those recommended to receive treatment (\code{ATE.positives}); the number of observations in \code{data} recommended to not receive treatment (\code{n.negatives}); the estimated average treatment effect among those recommended to not receive treatment (\code{ATE.negatives}); the estimated average benefit of using the rule, with the weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives (\code{ABR}). If \code{bootstrap.CI=TRUE}, then 4 additional columns are included, showing the lower bound (LB) and upper bound (UB) of the 95\% CIs for \code{ATE.positives} and \code{ATE.negatives}.
+\item \code{summaries}: a matrix with columns reporting the following summaries of treatment rule performance: the number of observations in \code{evaluation.data} recommended to receive treatment. (\code{n.positives}); the estimated average treatment effect among those recommended to receive treatment (\code{ATE.positives}); the number of observations in \code{evaluation.data} recommended to not receive treatment (\code{n.negatives}); the estimated average treatment effect among those recommended to not receive treatment (\code{ATE.negatives}); the estimated average benefit of using the rule, with the weighted average of ATE.positives and -1 * ATE.negatives where weights are the proportions of test-positives and test-negatives (\code{ABR}). If \code{bootstrap.CI=TRUE}, then 4 additional columns are included, showing the lower bound (LB) and upper bound (UB) of the 95\% CIs for \code{ATE.positives} and \code{ATE.negatives}.
 }
 }
 \description{
@@ -81,7 +82,7 @@ example.split <- SplitData(data=obsStudyGeneExpressions,
                                      n.sets=3, split.proportions=c(0.5, 0.25, 0.25))
 development.data <- example.split[example.split$partition == "development",]
 validation.data <- example.split[example.split$partition == "validation",]
-one.rule <- BuildRule(data=development.data,
+one.rule <- BuildRule(development.data=development.data,
                      study.design="observational",
                      prediction.approach="split.regression",
                      name.outcome="no_relapse",
@@ -92,7 +93,7 @@ one.rule <- BuildRule(data=development.data,
                      names.influencing.rule=c("age", paste0("gene_", 1:10)),
                      propensity.method="logistic.regression",
                      rule.method="glm.regression")
-split.validation <- EvaluateRule(data=validation.data,
+split.validation <- EvaluateRule(evaluation.data=validation.data,
                           BuildRule.object=one.rule,
                           study.design="observational",
                           name.outcome="no_relapse",
