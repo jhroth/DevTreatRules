@@ -6,9 +6,9 @@ Logit <- function(x) log(x / (1 - x))
 Expit <- function(x) exp(x) / (1 + exp(x))
 NamesToGlmFormula <- function(name.response, names.features, include.intercept) {
     if (include.intercept == TRUE) {
-        result <- as.formula(paste0(name.response, " ~ ", paste0(names.features, collapse=" + ")))
+        result <- stats::as.formula(paste0(name.response, " ~ ", paste0(names.features, collapse=" + ")))
     } else if (include.intercept == FALSE) {
-        result <- as.formula(paste0(name.response, " ~ 0 +", paste0(names.features, collapse=" + ")))
+        result <- stats::as.formula(paste0(name.response, " ~ 0 +", paste0(names.features, collapse=" + ")))
     }
     return(result)
 }
@@ -253,7 +253,7 @@ DoPrediction <- function(data.matrix,
                                            "observation.weights"=observation.weights)
         #print(summary(df.with.weights))
         #print(my.glm.formula)
-        one.fit <- glm(my.glm.formula,
+        one.fit <- stats::glm(my.glm.formula,
                             family="quasibinomial", 
                             data=df.with.weights,
                             weights=observation.weights)
@@ -270,7 +270,7 @@ DoPrediction <- function(data.matrix,
         }
         df.with.weights <- data.frame(data.df,
                                            "observation.weights"=observation.weights)
-        one.fit <- glm(my.glm.formula,
+        one.fit <- stats::glm(my.glm.formula,
                             family="gaussian",
                             data=df.with.weights,
                             weights=observation.weights)
@@ -314,7 +314,7 @@ FormatData <- function(data,
     }
     # Create model matrix objects
     ## L (variables influencing treatment)
-    model.matrix.L <- model.matrix(as.formula(paste("~", names.influencing.treatment, collapse="+", sep=" ")), data=data)
+    model.matrix.L <- stats::model.matrix(stats::as.formula(paste("~", names.influencing.treatment, collapse="+", sep=" ")), data=data)
     #print("orig names of model.matrix.L:")
     #print(names(model.matrix.L))
     if (ncol(model.matrix.L) == 2) {
@@ -326,7 +326,7 @@ FormatData <- function(data,
     }
     df.model.matrix.L <- as.data.frame(model.matrix.L)
     ## X (variables influencing rule)
-    model.matrix.X <- model.matrix(as.formula(paste("~", names.influencing.rule, collapse="+", sep=" ")), data=data)
+    model.matrix.X <- stats::model.matrix(stats::as.formula(paste("~", names.influencing.rule, collapse="+", sep=" ")), data=data)
     #print("orig names of model.matrix.X:")
     #print(names(model.matrix.X))
     if (ncol(model.matrix.X) == 2) {
@@ -340,9 +340,9 @@ FormatData <- function(data,
     if (length(c(names.influencing.treatment, names.influencing.rule)) <= 1){
         stop("need at least two variables influencing treatment and rule combined")
     }
-    model.matrix.L.and.X <- model.matrix(as.formula(paste("~", c(names.influencing.treatment, names.influencing.rule), collapse="+", sep=" ")), data=data)[, -1, drop=FALSE]
+    model.matrix.L.and.X <- stats::model.matrix(stats::as.formula(paste("~", c(names.influencing.treatment, names.influencing.rule), collapse="+", sep=" ")), data=data)[, -1, drop=FALSE]
     df.model.matrix.L.and.X <- as.data.frame(model.matrix.L.and.X)
-    model.matrix.all <- model.matrix(as.formula(paste("~", c(name.outcome, name.treatment, names.influencing.treatment, names.influencing.rule), collapse="+", sep=" ")), data=data)[, -1, drop=FALSE]
+    model.matrix.all <- stats::model.matrix(stats::as.formula(paste("~", c(name.outcome, name.treatment, names.influencing.treatment, names.influencing.rule), collapse="+", sep=" ")), data=data)[, -1, drop=FALSE]
     if (type.outcome == "binary") {
         df.model.matrix.all <- data.frame("outcome"=data[, name.outcome], "outcome.fac"=outcome.fac,
                                                       "treatment"=data[, name.treatment], "fac.treatment"=fac.treatment,

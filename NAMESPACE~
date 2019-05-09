@@ -5,5 +5,8 @@ export(CompareRulesOnValidation)
 export(EvaluateRule)
 export(PredictRule)
 export(SplitData)
+import(stats)
 import(DynTxRegime)
 import(glmnet)
+import(modelObj)
+

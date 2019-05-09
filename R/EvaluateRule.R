@@ -264,21 +264,21 @@ EvaluateRule <- function(evaluation.data,
         }
         if (bootstrap.type == "basic") {
             if (observed.n.positives > 0) {
-                basic.bootstrap.CI.ATE.positives <- c(2 * observed.ATE.positives - quantile(vec.mean.ATE.positives, probs=0.975),
-                                                                          2 * observed.ATE.positives - quantile(vec.mean.ATE.positives, probs=0.025))
+                basic.bootstrap.CI.ATE.positives <- c(2 * observed.ATE.positives - stats::quantile(vec.mean.ATE.positives, probs=0.975),
+                                                                          2 * observed.ATE.positives - stats::quantile(vec.mean.ATE.positives, probs=0.025))
                 names(basic.bootstrap.CI.ATE.positives) <- c("2.5%", "97.5%")
             } else {
                 basic.bootstrap.CI.ATE.positives <- c(NA, NA)
             }
             if (observed.n.negatives > 0) {
-                basic.bootstrap.CI.ATE.negatives <- c(2 * observed.ATE.negatives - quantile(vec.mean.ATE.negatives, probs=0.975),
-                                                                          2 * observed.ATE.negatives - quantile(vec.mean.ATE.negatives, probs=0.025))
+                basic.bootstrap.CI.ATE.negatives <- c(2 * observed.ATE.negatives - stats::quantile(vec.mean.ATE.negatives, probs=0.975),
+                                                                          2 * observed.ATE.negatives - stats::quantile(vec.mean.ATE.negatives, probs=0.025))
                 names(basic.bootstrap.CI.ATE.negatives) <- c("2.5%", "97.5%")
             } else {
                 basic.bootstrap.CI.ATE.negatives <- c(NA, NA)
             }
-            basic.bootstrap.CI.ABR <- c(2 * observed.ABR - quantile(vec.mean.ABR, probs=0.975),
-                                                                          2 * observed.ABR - quantile(vec.mean.ABR, probs=0.025))
+            basic.bootstrap.CI.ABR <- c(2 * observed.ABR - stats::quantile(vec.mean.ABR, probs=0.975),
+                                                                          2 * observed.ABR - stats::quantile(vec.mean.ABR, probs=0.025))
             names(basic.bootstrap.CI.ABR) <- c("2.5%", "97.5%")
         } else {
             stop("only basic bootstrap CI is supported for now")
