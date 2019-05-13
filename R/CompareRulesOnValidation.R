@@ -57,7 +57,7 @@
 #'                validation.data=validation.data,
 #'                study.design.development="observational",
 #'                vec.approaches=c("split.regression", "OWL.framework", "direct.interactions"),
-#'                vec.rule.methods=c("glm.regression", "lasso", "ridge"),
+#'                vec.rule.methods=c("glm.regression", "lasso"),
 #'                vec.propensity.methods="logistic.regression",
 #'                name.outcome.development="no_relapse",
 #'                type.outcome.development="binary",

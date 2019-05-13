@@ -54,7 +54,7 @@ PredictRule <- function(BuildRule.object,
         stop("new.X must be a data frame")
     }
     prediction.approach <- BuildRule.object$prediction.approach
-    model.matrix.new.X <- model.matrix(as.formula(paste("~", colnames(new.X), collapse="+", sep=" ")), data=new.X)[, -1, drop=FALSE]
+    model.matrix.new.X <- stats::model.matrix(stats::as.formula(paste("~", colnames(new.X), collapse="+", sep=" ")), data=new.X)[, -1, drop=FALSE]
     df.model.matrix.new.X <- data.frame(model.matrix.new.X)
     rm(new.X)
     if (prediction.approach == "OWL") {

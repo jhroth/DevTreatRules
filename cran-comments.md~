@@ -1,7 +1,7 @@
 ## Resubmission on May 12, 2019
 This is a resubmission. In this version I have:
 * Replaced the OWL abbrevation in the DESCRIPTION with the full name, outcome-weighted learning.
-* Re-written the description field of the DESCRIPTION file to add references for the outcome-weighted learning and direct-interactions methods. The third method in that field, split-regression, is a standard ad-hoc alternative that to my knowledge does not have a reference, so I added a brief summary of that method instead of a reference.
+* Re-written the description field of the DESCRIPTION file to add references for the outcome-weighted learning and direct-interactions methods. The third method in that field, split-regression, is a standard ad-hoc alternative that to my knowledge does not have a reference, so I added a brief summary of that method in place of a reference.
 
 ## Resubmission on May 9, 2019
 This is a resubmission. In this version I added new imports to the NAMESPACE and DESCRIPTION files so the "undefined global functions or variables:"no longer appears
